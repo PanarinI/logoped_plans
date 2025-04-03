@@ -13,3 +13,11 @@ __pycache__/
 https://github.com/panarini/logoped.git
 
 git remote set-url origin https://github.com/panarini/logoped.git
+
+echo "# Logoped" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git branch -M main
+git remote add origin https://github.com/panarini/logoped.git
+git push -u origin main
