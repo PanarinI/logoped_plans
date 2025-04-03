@@ -10,4 +10,6 @@ __pycache__/
 .idea/
 .idea/workspace.xml
 
-https://github.com/panarinI/logoped.git
+https://github.com/panarini/logoped.git
+
+git remote set-url origin https://github.com/panarini/logoped.git
