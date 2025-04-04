@@ -5,3 +5,4 @@
 
 
 streamlit run app/main.py
+streamlit run app/main_completions.py
