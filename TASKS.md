@@ -4,6 +4,8 @@
 ## to-do
 [ ] доп. функция - поиск по базе (file_search)
 [ ] поле ввода веб-источников (ограничение web search)
+[] сохранение истории сессий пользователя — очень легко сделать через st.session_state["history"].
+[] деплой в Hugging Face Spaces
 ## in progress
 
 [ ] stream=True

@@ -1,17 +1,18 @@
 import os
-import asyncio
 from dotenv import load_dotenv
 from openai import OpenAI
 import streamlit as st
 
 # Загрузка переменных окружения
 load_dotenv()
-api_key = os.getenv("API_KEY_openai")
+#api_key = os.getenv("API_KEY_openai")
+API_KEY = os.getenv("API_KEY")
+BASE_URL = os.getenv("BASE_URL")
 
 
 def generate_lesson_plan(params):
-    client = OpenAI(api_key=api_key)
-
+#   client = OpenAI(api_key=api_key)
+    client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
     prompt = f"""
     Ты — эксперт в области логопедии, специализирующийся на разработке занятий для детей с речевыми нарушениями. На вход ты получаешь следующие параметры:
     - **Основное нарушение:** {params['нарушение']}
@@ -36,115 +37,132 @@ def generate_lesson_plan(params):
     6. **Рекомендации по особым условиям** (если указан параметр "Особые условия")
     """
 
-    tools = []
-    tool_choice = None
+#    tools = []
+#    tool_choice = None
 
-    if params['разрешен_web_search']:
-        tools.append({
-            "type": "web_search_preview",
-            "search_context_size": "medium",
-            "user_location": {
-                "type": "approximate",
-                "country": "RU"
-            }
-        })
-        tool_choice = {"type": "web_search_preview"}
+#    if params['разрешен_web_search']:
+#        tools.append({
+#            "type": "web_search_preview",
+#            "search_context_size": "medium",
+#            "user_location": {
+#                "type": "approximate",
+#                "country": "RU"
+#            }
+#        })
+#        tool_choice = {"type": "web_search_preview"}
 
-    response = client.responses.create(
+#    response = client.responses.create(
+#        model="gpt-4o-mini",
+#        input=prompt,
+#        tools=tools if tools else None,
+#        tool_choice=tool_choice,
+#        max_output_tokens=2000
+#    )
+#    return response.output_text
+#
+    response = client.chat.completions.create(
         model="gpt-4o-mini",
-        input=prompt,
-        tools=tools if tools else None,
-        tool_choice=tool_choice,
-        max_output_tokens=2000
+        messages=[
+            {"role": "system", "content": "Ты — эксперт в области логопедии."},
+            {"role": "user", "content": prompt}
+        ],
+        max_tokens=2000
     )
-    return response.output_text
+    return response.choices[0].message.content
 
 
 # Интерфейс Streamlit
 st.title("Генератор логопедических занятий")
 
-# Левая часть с настройками
+# Инициализация флагов в session_state
+if "loading" not in st.session_state:
+    st.session_state["loading"] = False
+if "lesson_plan" not in st.session_state:
+    st.session_state["lesson_plan"] = ""
+
+# Используем обычный блок в сайдбаре для динамических виджетов
 with st.sidebar:
     st.header("Настройки занятия")
 
-    # Обязательные поля
     нарушение = st.text_input(
         "Основное нарушение*",
-        placeholder="Пример: Дислалия (свистящие), ОНР II уровня"
+        placeholder="Пример: Дислалия (свистящие), ОНР II уровня",
+        disabled=st.session_state["loading"]
     )
-
     возраст_ребенка = st.text_input(
         "Возраст ребенка*",
-        placeholder="Пример: 5 лет, 6-7 лет"
+        placeholder="Пример: 5 лет, 6-7 лет",
+        disabled=st.session_state["loading"]
     )
-
     цель_занятия = st.text_input(
         "Цель занятия*",
-        placeholder="Пример: Автоматизация звука [Р] в слогах"
+        placeholder="Пример: Автоматизация звука [Р] в слогах",
+        disabled=st.session_state["loading"]
     )
 
-    # Переключатель формата занятия
     формат_занятия = st.radio(
         "Формат занятия*",
         options=["Индивидуальное", "Групповое"],
         index=0,
-        horizontal=True
+        horizontal=True,
+        disabled=st.session_state["loading"]
     )
 
-    количество_детей = 1  # Значение по умолчанию
-
+    # Это поле появляется динамически, когда выбрано "Групповое"
     if формат_занятия == "Групповое":
         количество_детей = st.number_input(
             "Количество детей в группе*",
             min_value=2,
             max_value=10,
-            value=3
+            value=3,
+            disabled=st.session_state["loading"]
         )
+    else:
+        количество_детей = 1
 
-    # Дополнительные параметры
     тематика = st.text_input(
         "Тематика занятия",
-        placeholder="Пример: Животные, Транспорт"
+        placeholder="Пример: Животные, Транспорт",
+        disabled=st.session_state["loading"]
     )
-
     особые_условия = st.text_input(
         "Особые условия",
-        placeholder="Пример: гиперактивность, РАС"
+        placeholder="Пример: гиперактивность, РАС",
+        disabled=st.session_state["loading"]
     )
 
-    # Инвентарь
     st.subheader("Инвентарь")
     инвентарь_чекбоксы = {
-        "Зеркало": st.checkbox("Зеркало"),
-        "Карточки": st.checkbox("Карточки"),
-        "Игрушки": st.checkbox("Игрушки")
+        "Зеркало": st.checkbox("Зеркало", disabled=st.session_state["loading"]),
+        "Карточки": st.checkbox("Карточки", disabled=st.session_state["loading"]),
+        "Игрушки": st.checkbox("Игрушки", disabled=st.session_state["loading"])
     }
-    дополнительный_инвентарь = st.text_input("Другое")
-
+    дополнительный_инвентарь = st.text_input("Другое", disabled=st.session_state["loading"])
     инвентарь = ", ".join([k for k, v in инвентарь_чекбоксы.items() if v])
     if дополнительный_инвентарь:
         инвентарь += f", {дополнительный_инвентарь}"
+    инвентарь = инвентарь.strip(", ")
 
-    # Другие настройки
     длительность_занятия = st.slider(
         "Длительность (минут)",
         min_value=15,
         max_value=60,
         value=30,
-        step=5
+        step=5,
+        disabled=st.session_state["loading"]
     )
+    наличие_ДЗ = st.checkbox("Домашнее задание", disabled=st.session_state["loading"])
+    разрешен_web_search = st.checkbox("Поиск материалов в интернете", disabled=st.session_state["loading"])
 
-    наличие_ДЗ = st.checkbox("Домашнее задание")
-    разрешен_web_search = st.checkbox("Поиск материалов в интернете")
+    # Кнопка отправки, блокируется если идет генерация
+    submit = st.button("Создать конспект", disabled=st.session_state["loading"], key="submit_btn")
 
-    # Кнопка генерации
-    сгенерировать = st.button("Создать конспект")
-
-# Правая часть с результатом
-if сгенерировать:
+# Если кнопка нажата, запускаем генерацию
+if submit:
     if not нарушение or not возраст_ребенка or not цель_занятия:
-        st.error("Заполните обязательные поля!")
+        st.sidebar.error("Заполните обязательные поля!")
     else:
+        st.session_state["loading"] = True  # Блокируем виджеты
         params = {
             "нарушение": нарушение,
             "возраст_ребенка": возраст_ребенка,
@@ -158,11 +176,16 @@ if сгенерировать:
             "наличие_ДЗ": наличие_ДЗ,
             "разрешен_web_search": разрешен_web_search
         }
-
         with st.spinner("Создаем конспект..."):
             try:
                 результат = generate_lesson_plan(params)
+                st.session_state["lesson_plan"] = результат
                 st.success("Готово!")
-                st.markdown(результат)
             except Exception as e:
                 st.error(f"Ошибка: {e}")
+            finally:
+                st.session_state["loading"] = False
+
+# Отображаем ранее сгенерированный конспект, если он есть и генерация не идёт
+if st.session_state.get("lesson_plan", "") and not st.session_state["loading"]:
+    st.markdown(st.session_state["lesson_plan"])
