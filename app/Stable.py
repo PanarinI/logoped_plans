@@ -3,9 +3,6 @@ import asyncio
 from dotenv import load_dotenv
 from openai import OpenAI
 import streamlit as st
-from docx import Document
-from io import BytesIO
-
 
 # Загрузка переменных окружения
 load_dotenv()
@@ -62,30 +59,9 @@ def generate_lesson_plan(params):
     )
     return response.output_text
 
-def save_as_docx(text):
-    doc = Document()
-    doc.add_paragraph(text)
-    buffer = BytesIO()
-    doc.save(buffer)
-    buffer.seek(0)
-    return buffer
 
 # Интерфейс Streamlit
-st.set_page_config(page_title="Логопедический помощник", layout="wide")
-
-# Добавляем CSS для синей темы
-st.markdown("""
-    <style>
-    body { background-color: #E3F2FD; }
-    .stButton>button { background-color: #1565C0; color: white; border-radius: 10px; }
-    .stTextInput>div>div>input { border-color: #1565C0; }
-    .stRadio>div>label { color: #0D47A1; }
-    .stMarkdown { color: #0D47A1; }
-    </style>
-""", unsafe_allow_html=True)
-
-st.title("Помощник логопеда")
-
+st.title("Генератор логопедических занятий")
 
 # Левая часть с настройками
 with st.sidebar:
@@ -186,17 +162,7 @@ if сгенерировать:
         with st.spinner("Создаем конспект..."):
             try:
                 результат = generate_lesson_plan(params)
-                st.session_state['конспект'] = результат  # Сохраняем результат в состоянии
                 st.success("Готово!")
                 st.markdown(результат)
             except Exception as e:
                 st.error(f"Ошибка: {e}")
-
-            # Создаем файл для скачивания
-            docx_file = save_as_docx(результат)
-            st.download_button(
-                label="📥 Скачать конспект",
-                data=docx_file,
-                file_name="логопедический_конспект.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-)
