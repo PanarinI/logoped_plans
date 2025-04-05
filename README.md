@@ -13,3 +13,5 @@ short_description: Помощник в создании логопедическ
 
 CHECK
 
+git add .
+git commit -,m
