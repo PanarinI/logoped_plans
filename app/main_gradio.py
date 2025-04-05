@@ -5,6 +5,8 @@ import gradio as gr
 import time
 from datetime import datetime
 import calendar
+from docx import Document
+import tempfile
 
 # Загрузка переменных окружения
 load_dotenv()
@@ -110,55 +112,54 @@ def generate_lesson_plan_interface(
 with gr.Blocks() as demo:
     gr.Markdown("## 🧠 Генератор логопедических занятий")
 
-    with gr.Row():
-        # Левая колонка — настройки (Ребенок)
-        with gr.Box():
-            gr.Markdown("### 🧒 Ребёнок", elem_classes=["block-title"])
-            нарушение = gr.Textbox(label="Основное нарушение*",
-                                   placeholder="Пример: Дислалия (свистящие), ОНР II уровня")
-            возраст = gr.Textbox(label="Возраст ребенка*", placeholder="Пример: 5 лет, 6-7 лет")
-            особые_условия = gr.Textbox(label="Особые условия", placeholder="Пример: гиперактивность, РАС")
+    # Левая колонка — настройки (Ребенок)
+    with gr.Box():
+        gr.Markdown("### 🧒 Ребёнок", elem_classes=["block-title"])
+        нарушение = gr.Textbox(label="Основное нарушение*",
+                               placeholder="Пример: Дислалия (свистящие), ОНР II уровня")
+        возраст = gr.Textbox(label="Возраст ребенка*", placeholder="Пример: 5 лет, 6-7 лет")
+        особые_условия = gr.Textbox(label="Особые условия", placeholder="Пример: гиперактивность, РАС")
 
-        # Правая колонка — настройки (Занятие)
-        with gr.Box():
-            gr.Markdown("### 📄 Занятие", elem_classes=["block-title"])
-            формат = gr.Radio(["Индивидуальное", "Групповое"], label="Формат занятия", value="Индивидуальное")
-            количество_детей = gr.Slider(
-                label="Количество детей в группе", minimum=2, maximum=10, value=2, step=1, visible=False
-            )
-
-
-            def toggle_group_slider(selected_format):
-                return gr.update(visible=(selected_format == "Групповое"))
+    # Правая колонка — настройки (Занятие)
+    with gr.Box():
+        gr.Markdown("### 📄 Занятие", elem_classes=["block-title"])
+        формат = gr.Radio(["Индивидуальное", "Групповое"], label="Формат занятия", value="Индивидуальное")
+        количество_детей = gr.Slider(
+            label="Количество детей в группе", minimum=2, maximum=10, value=2, step=1, visible=False
+        )
 
 
-            формат.change(fn=toggle_group_slider, inputs=формат, outputs=количество_детей)
-
-            цель = gr.Textbox(label="Цель занятия*", placeholder="Пример: Автоматизация звука [Р] в слогах")
-            тематика = gr.Textbox(label="Тематика", placeholder="Пример: Животные, Транспорт")
-            длительность = gr.Slider(label="Длительность занятия (мин)", minimum=15, maximum=60, value=30, step=5)
-            инвентарь = gr.Textbox(label="Инвентарь (введите через запятую)",
-                                   placeholder="Пример: Зеркало, Карточки, Игрушки")
-            дз = gr.Checkbox(label="Домашнее задание")
-            web = gr.Checkbox(label="Разрешить поиск в интернете")
+        def toggle_group_slider(selected_format):
+            return gr.update(visible=(selected_format == "Групповое"))
 
 
-            def toggle_web_source_input(allow_web_search):
-                return gr.update(visible=allow_web_search)
+        формат.change(fn=toggle_group_slider, inputs=формат, outputs=количество_детей)
+
+        цель = gr.Textbox(label="Цель занятия*", placeholder="Пример: Автоматизация звука [Р] в слогах")
+        тематика = gr.Textbox(label="Тематика", placeholder="Пример: Животные, Транспорт")
+        длительность = gr.Slider(label="Длительность занятия (мин)", minimum=15, maximum=60, value=30, step=5)
+        инвентарь = gr.Textbox(label="Инвентарь (введите через запятую)",
+                               placeholder="Пример: Зеркало, Карточки, Игрушки")
+        дз = gr.Checkbox(label="Домашнее задание")
+        web = gr.Checkbox(label="Разрешить поиск в интернете")
 
 
-            # После этого можно добавить поле для ввода источников
-            web_sources = gr.Textbox(label="Источники для поиска", placeholder="Введите адреса через запятую",
-                                     visible=False)
+        def toggle_web_source_input(allow_web_search):
+            return gr.update(visible=allow_web_search)
 
-            # Обновим логику чекбокса для поиска в интернете
-            web.change(fn=toggle_web_source_input, inputs=web, outputs=web_sources)
 
-            btn = gr.Button("Создать конспект")
+        # После этого можно добавить поле для ввода источников
+        web_sources = gr.Textbox(label="Источники для поиска", placeholder="Введите адреса через запятую",
+                                 visible=False)
 
-        # Правая колонка — результат
-        with gr.Column(scale=2):
-            output = gr.Markdown("")
+        # Обновим логику чекбокса для поиска в интернете
+        web.change(fn=toggle_web_source_input, inputs=web, outputs=web_sources)
+
+        btn = gr.Button("Создать конспект")
+
+    # Правая колонка — результат (output)
+    with gr.Column(scale=2):
+        output = gr.Markdown("")
 
     # Ввод параметров
     all_inputs = [
@@ -166,6 +167,16 @@ with gr.Blocks() as demo:
         формат, количество_детей, цель, тематика, длительность,
         инвентарь, дз, web, web_sources
     ]
+
+
+
+    def generate_docx(text: str):
+        doc = Document()
+        for line in text.split("\n"):
+            doc.add_paragraph(line)
+        tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".docx")
+        doc.save(tmp_file.name)
+        return tmp_file.name
 
 
     def on_submit_with_spinner(*args):
@@ -189,11 +200,20 @@ with gr.Blocks() as demo:
             gr.update(value=result)
         )
 
+        docx_path = generate_docx(result)
+        download_btn = gr.File(label="⬇️ Скачать как .docx", visible=False)
+
+        yield (
+            *[gr.update(interactive=True) for _ in all_inputs],
+            gr.update(value=result),
+            gr.update(value=docx_path, visible=True)  # для download_btn
+        )
+
 
     btn.click(
         fn=on_submit_with_spinner,
         inputs=[*all_inputs],
-        outputs=[*all_inputs, output]
+        outputs=[*all_inputs, output, download_btn]
     )
 
 
