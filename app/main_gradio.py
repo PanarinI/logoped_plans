@@ -112,6 +112,9 @@ def generate_lesson_plan_interface(
 with gr.Blocks() as demo:
     gr.Markdown("## 🧠 Генератор логопедических занятий")
 
+    # Сскрытое поле для хранения текста конспекта (для скачивания)
+    hidden_text = gr.Textbox(visible=False)
+
     with gr.Row():
         # Первый блок настройки (Ребенок)
         with gr.Column(scale=1):
@@ -158,8 +161,10 @@ with gr.Blocks() as demo:
         # Правая колонка — результат (output)
         with gr.Column(scale=2):  # Правая колонка — результат
             output = gr.Markdown("")
-            download_btn = gr.Button("⬇️ Скачать .docx", visible=False)
-
+            download_btn = gr.DownloadButton(
+                label="⬇️ Скачать .docx",
+                visible=False
+            )
 
     # Ввод параметров
     all_inputs = [
@@ -168,9 +173,8 @@ with gr.Blocks() as demo:
         инвентарь, дз, web, web_sources
     ]
 
-    download_btn = gr.File(label="⬇️ Скачать .docx", visible=False)
 
-
+    # Функция для генерации docx файла
     def generate_docx(text: str):
         doc = Document()
         for line in text.split("\n"):
@@ -187,33 +191,43 @@ with gr.Blocks() as demo:
             yield (
                 *[gr.update(interactive=True) for _ in all_inputs],
                 gr.update(value="❗Заполните обязательные поля: нарушение, возраст, цель занятия"),
-                gr.update(visible=False)  # download_btn выключен
+                gr.update(visible=False),
+                ""  # Временный текст для hidden_text
             )
             return
 
+        # Показываем спиннер
         yield (
             *[gr.update(interactive=False) for _ in all_inputs],
             gr.update(value="⏳ Конспект создается..."),
-            gr.update(visible=False)  # download_btn выключен
+            gr.update(visible=False),
+            ""  # Временный текст для hidden_text
         )
 
+        # Генерация конспекта
         result = generate_lesson_plan_interface(*args)
-        docx_path = generate_docx(result)
+        file_path = generate_docx(result)
 
         yield (
             *[gr.update(interactive=True) for _ in all_inputs],
             gr.update(value=result),
-            gr.update(value=docx_path, visible=True)
+            gr.update(visible=True),
+            file_path  # Возвращаем путь к файлу
         )
 
-
-
+    # Привязываем обработчики
     btn.click(
-        fn=on_submit_with_spinner,
-        inputs=[*all_inputs],
-        outputs=[*all_inputs, output, download_btn]
+    fn=on_submit_with_spinner,
+    inputs=all_inputs,
+    outputs=[* all_inputs, output, download_btn, hidden_text]
     )
 
+    # Обработчик кнопки скачивания
+    download_btn.click(
+        fn=lambda x: x,  # Просто возвращаем путь к файлу
+        inputs=hidden_text,
+        outputs=download_btn
+        )
 
 if __name__ == "__main__":
     demo.launch(share=True)
