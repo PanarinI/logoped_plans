@@ -3,7 +3,7 @@ streamlit run app/main.py
 streamlit run app/main_completions.py
 
 
- git push --force space main
+git push --force space main
 
 
 
