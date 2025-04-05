@@ -112,7 +112,7 @@ def generate_lesson_plan_interface(
 with gr.Blocks() as demo:
     gr.Markdown("## 🧠 Генератор логопедических занятий")
 
-    # Левая колонка — настройки (Ребенок)
+    # Первый блок настройки (Ребенок)
     with gr.Column():
         gr.Markdown("### 🧒 Ребёнок", elem_classes=["block-title"])
         нарушение = gr.Textbox(label="Основное нарушение*",
@@ -120,7 +120,7 @@ with gr.Blocks() as demo:
         возраст = gr.Textbox(label="Возраст ребенка*", placeholder="Пример: 5 лет, 6-7 лет")
         особые_условия = gr.Textbox(label="Особые условия", placeholder="Пример: гиперактивность, РАС")
 
-    # Правая колонка — настройки (Занятие)
+    # Второй блок настройки (Занятие)
     with gr.Column():
         gr.Markdown("### 📄 Занятие", elem_classes=["block-title"])
         формат = gr.Radio(["Индивидуальное", "Групповое"], label="Формат занятия", value="Индивидуальное")
@@ -158,7 +158,7 @@ with gr.Blocks() as demo:
         btn = gr.Button("Создать конспект")
 
     # Правая колонка — результат (output)
-    with gr.Column(scale=2):
+    with gr.Column():
         output = gr.Markdown("")
 
 
@@ -185,20 +185,23 @@ with gr.Blocks() as demo:
         if not args[0] or not args[1] or not args[5]:
             yield (
                 *[gr.update(interactive=True) for _ in all_inputs],
-                gr.update(value="❗Заполните обязательные поля: нарушение, возраст, цель занятия")
+                gr.update(value="❗Заполните обязательные поля: нарушение, возраст, цель занятия"),
+                gr.update(visible=False)  # download_btn выключен
             )
             return
 
         yield (
             *[gr.update(interactive=False) for _ in all_inputs],
-            gr.update(value="⏳ Генерация конспекта...")
+            gr.update(value="⏳ Генерация конспекта..."),
+            gr.update(visible=False)  # download_btn выключен
         )
 
         result = generate_lesson_plan_interface(*args)
 
         yield (
             *[gr.update(interactive=True) for _ in all_inputs],
-            gr.update(value=result)
+            gr.update(value=result),
+            gr.update(visible=False)  # download_btn выключен
         )
 
         docx_path = generate_docx(result)
