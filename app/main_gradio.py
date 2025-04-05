@@ -114,21 +114,18 @@ with gr.Blocks() as demo:
 
     with gr.Row():
         # Первый блок настройки (Ребенок)
-        with gr.Column():
+        with gr.Column(scale=1):
             gr.Markdown("### 🧒 Ребёнок", elem_classes=["block-title"])
             нарушение = gr.Textbox(label="Основное нарушение*",
                                    placeholder="Пример: Дислалия (свистящие), ОНР II уровня")
             возраст = gr.Textbox(label="Возраст ребенка*", placeholder="Пример: 5 лет, 6-7 лет")
             особые_условия = gr.Textbox(label="Особые условия", placeholder="Пример: гиперактивность, РАС")
 
-        # Второй блок настройки (Занятие)
-        with gr.Column():
             gr.Markdown("### 📄 Занятие", elem_classes=["block-title"])
             формат = gr.Radio(["Индивидуальное", "Групповое"], label="Формат занятия", value="Индивидуальное")
             количество_детей = gr.Slider(
                 label="Количество детей в группе", minimum=2, maximum=10, value=2, step=1, visible=False
             )
-
 
             def toggle_group_slider(selected_format):
                 return gr.update(visible=(selected_format == "Групповое"))
@@ -158,9 +155,10 @@ with gr.Blocks() as demo:
 
             btn = gr.Button("Создать конспект")
 
-    # Правая колонка — результат (output)
-    with gr.Column(scale=2):
-        output = gr.Markdown("")
+        # Правая колонка — результат (output)
+        with gr.Column(scale=2):  # Правая колонка — результат
+            output = gr.Markdown("")
+            download_btn = gr.Button("⬇️ Скачать .docx", visible=False)
 
 
     # Ввод параметров
@@ -177,7 +175,6 @@ with gr.Blocks() as demo:
         doc = Document()
         for line in text.split("\n"):
             doc.add_paragraph(line)
-
         tmp_dir = tempfile.gettempdir()
         file_path = os.path.join(tmp_dir, "Конспект_занятия.docx")
         doc.save(file_path)
@@ -196,18 +193,11 @@ with gr.Blocks() as demo:
 
         yield (
             *[gr.update(interactive=False) for _ in all_inputs],
-            gr.update(value="⏳ Генерация конспекта..."),
+            gr.update(value="⏳ Конспект создается..."),
             gr.update(visible=False)  # download_btn выключен
         )
 
         result = generate_lesson_plan_interface(*args)
-
-        yield (
-            *[gr.update(interactive=True) for _ in all_inputs],
-            gr.update(value=result),
-            gr.update(visible=False)  # download_btn выключен
-        )
-
         docx_path = generate_docx(result)
 
         yield (
@@ -215,6 +205,8 @@ with gr.Blocks() as demo:
             gr.update(value=result),
             gr.update(value=docx_path, visible=True)
         )
+
+
 
     btn.click(
         fn=on_submit_with_spinner,
