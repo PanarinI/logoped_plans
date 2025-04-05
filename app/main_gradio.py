@@ -113,7 +113,7 @@ with gr.Blocks() as demo:
     gr.Markdown("## 🧠 Генератор логопедических занятий")
 
     # Левая колонка — настройки (Ребенок)
-    with gr.Box():
+    with gr.Column():
         gr.Markdown("### 🧒 Ребёнок", elem_classes=["block-title"])
         нарушение = gr.Textbox(label="Основное нарушение*",
                                placeholder="Пример: Дислалия (свистящие), ОНР II уровня")
@@ -121,7 +121,7 @@ with gr.Blocks() as demo:
         особые_условия = gr.Textbox(label="Особые условия", placeholder="Пример: гиперактивность, РАС")
 
     # Правая колонка — настройки (Занятие)
-    with gr.Box():
+    with gr.Column():
         gr.Markdown("### 📄 Занятие", elem_classes=["block-title"])
         формат = gr.Radio(["Индивидуальное", "Групповое"], label="Формат занятия", value="Индивидуальное")
         количество_детей = gr.Slider(
@@ -201,14 +201,13 @@ with gr.Blocks() as demo:
         )
 
         docx_path = generate_docx(result)
-        download_btn = gr.File(label="⬇️ Скачать как .docx", visible=False)
+        download_btn = gr.File(label="⬇️ Скачать как .docx", visible=False, value=docx_path)
 
         yield (
             *[gr.update(interactive=True) for _ in all_inputs],
             gr.update(value=result),
-            gr.update(value=docx_path, visible=True)  # для download_btn
+            download_btn
         )
-
 
     btn.click(
         fn=on_submit_with_spinner,
