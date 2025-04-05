@@ -161,6 +161,7 @@ with gr.Blocks() as demo:
     with gr.Column(scale=2):
         output = gr.Markdown("")
 
+
     # Ввод параметров
     all_inputs = [
         нарушение, возраст, особые_условия,
@@ -168,7 +169,7 @@ with gr.Blocks() as demo:
         инвентарь, дз, web, web_sources
     ]
 
-
+    download_btn = gr.File(label="⬇️ Скачать .docx", visible=False)
 
     def generate_docx(text: str):
         doc = Document()
@@ -201,7 +202,6 @@ with gr.Blocks() as demo:
         )
 
         docx_path = generate_docx(result)
-        download_btn = gr.File(label="⬇️ Скачать как .docx", visible=False, value=docx_path)
 
         yield (
             *[gr.update(interactive=True) for _ in all_inputs],
