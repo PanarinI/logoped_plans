@@ -169,7 +169,7 @@ with gr.Blocks() as demo:
         # Правая колонка — результат (output)
         with gr.Column(scale=2):  # Правая колонка — результат
             output = gr.Markdown("")
-            download_btn = gr.DownloadButton(label="⬇️ Скачать .docx", file="", visible=False)
+            download_btn = gr.DownloadButton(label="⬇️ Скачать .docx", value="", visible=False)
 
 
     # Ввод параметров
