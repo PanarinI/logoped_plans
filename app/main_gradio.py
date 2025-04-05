@@ -108,17 +108,6 @@ def generate_lesson_plan_interface(
 #    )
 #    return response.choices[0].message.content
 
-
-def generate_docx(text: str) -> str:
-    """Создает .docx документ из переданного текста и возвращает путь к файлу."""
-    doc = Document()
-    for line in text.split("\n"):
-        doc.add_paragraph(line)
-    tmp_dir = tempfile.gettempdir()
-    file_path = os.path.join(tmp_dir, "Конспект_занятия.docx")
-    doc.save(file_path)
-    return file_path
-
 # Интерфейс Gradio
 with gr.Blocks() as demo:
     gr.Markdown("## 🧠 Генератор логопедических занятий")
@@ -169,7 +158,7 @@ with gr.Blocks() as demo:
         # Правая колонка — результат (output)
         with gr.Column(scale=2):  # Правая колонка — результат
             output = gr.Markdown("")
-            download_btn = gr.DownloadButton(label="⬇️ Скачать .docx", value="", visible=False)
+            download_btn = gr.Button("⬇️ Скачать .docx", visible=False)
 
 
     # Ввод параметров
@@ -180,6 +169,16 @@ with gr.Blocks() as demo:
     ]
 
     download_btn = gr.File(label="⬇️ Скачать .docx", visible=False)
+
+
+    def generate_docx(text: str):
+        doc = Document()
+        for line in text.split("\n"):
+            doc.add_paragraph(line)
+        tmp_dir = tempfile.gettempdir()
+        file_path = os.path.join(tmp_dir, "Конспект_занятия.docx")
+        doc.save(file_path)
+        return file_path
 
 
     def on_submit_with_spinner(*args):
