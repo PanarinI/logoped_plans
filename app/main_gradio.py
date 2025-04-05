@@ -206,7 +206,7 @@ with gr.Blocks() as demo:
         yield (
             *[gr.update(interactive=True) for _ in all_inputs],
             gr.update(value=result),
-            download_btn
+            gr.update(value=docx_path, visible=True)
         )
 
     btn.click(
