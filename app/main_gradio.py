@@ -165,7 +165,7 @@ with gr.Blocks() as demo:
                 label="⬇️ Скачать .docx",
                 visible=False
             )
-
+            output = gr.Markdown("")  # Поле для вывода конспекта
     # Ввод параметров
     all_inputs = [
         нарушение, возраст, особые_условия,
