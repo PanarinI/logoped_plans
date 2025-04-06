@@ -28,7 +28,8 @@ def generate_lesson_plan_interface(
         инвентарь, наличие_ДЗ, разрешен_web_search, web_sources, текущий_месяц=None
 ):
     # Логика работы с источниками - если есть, передаем
-    источники = [s.strip() for s in web_sources.split(",")] if разрешен_web_search and web_sources else []
+    источники = [web_sources] if разрешен_web_search and web_sources else []
+
 
     # Логика определения месяца
     if not текущий_месяц:
@@ -69,9 +70,8 @@ def generate_lesson_plan_interface(
         - **Длительность занятия:** {params['длительность_занятия']} минут
         - **Наличие домашнего задания:** {params['наличие_ДЗ']}
         - **Поиск по интернету:** {params['разрешен_web_search']}
-        {источники_строка}
         - **Текущий месяц :** {params['текущий_месяц']} (1=январь и т.д.)
-
+        {источники_строка}
         На основе этих параметров составь план занятия, который должен включать:
         1. **Тема занятия, цель и задачи (не более 3-х)** 
         2. **Необходимый инвентарь**
@@ -102,7 +102,7 @@ def generate_lesson_plan_interface(
         input=prompt,
         tools=tools if tools else None,
         tool_choice=tool_choice,
-        max_output_tokens=2000,
+        max_output_tokens=3000,
         stream=True
     )
 ####### БЕЗ СТРИМИНГА
@@ -111,14 +111,19 @@ def generate_lesson_plan_interface(
 ####### СТРИМИНГ
     try:
         for event in response:
+            # 1. Выводим чанки текста пользователю
             if event.type == 'response.output_text.delta':
                 yield event.delta
-            elif event.type == 'response.completed':
-                break
+
+            # 2. Ловим web_search_call и сразу логируем
+            elif event.type == 'web_search_call':
+                print("\n=== WEB SEARCH CALL ===")
+                print(f"ID: {event.id}")
+                print(f"Status: {event.status}")
+                print("=======================\n")
+
     except Exception as e:
         yield f"Ошибка: {str(e)}"
-
-
 
 
 ############# COMPLETIONS (РАБОТАЕТ БЕЗ TOOLS)
@@ -287,7 +292,7 @@ with gr.Blocks() as demo:
 #                gr.update(visible=True, value=file_path)
 #            )
 
-#       except Exception as e:
+#        except Exception as e:
 #            return (
 #                *[gr.update(interactive=True) for _ in all_inputs],
 #                gr.update(value=f"❌ Ошибка: {str(e)}"),
