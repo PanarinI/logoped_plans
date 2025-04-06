@@ -227,7 +227,7 @@ with gr.Blocks(css="app/styles.css") as demo:
         yield (
             *[gr.update(interactive=True) for _ in all_inputs],
             gr.update(value=result),
-            gr.update(visible=True),
+            gr.update(visible=True, value=file_path),  # Передаём путь к файлу прямо в DownloadButton
             file_path  # Возвращаем путь к файлу
         )
 
@@ -238,12 +238,6 @@ with gr.Blocks(css="app/styles.css") as demo:
     outputs=[* all_inputs, output, download_btn, hidden_text]
     )
 
-    # Обработчик кнопки скачивания
-    download_btn.click(
-        fn=lambda x: x,  # Просто возвращаем путь к файлу
-        inputs=hidden_text,
-        outputs=download_btn
-        )
 
 if __name__ == "__main__":
     demo.launch(share=True)
