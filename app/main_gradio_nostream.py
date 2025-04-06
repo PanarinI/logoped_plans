@@ -25,19 +25,23 @@ import logging
 
 def log_annotations_directly(response):
     try:
-        # Получаем полный ответ (без стриминга)
-        full_response = response.output_text
-
-        # Ищем аннотации в структуре ответа
-        if hasattr(response, 'content') and response.content:
+        # Проверяем наличие аннотаций в структуре ответа
+        if hasattr(response, 'content'):
             for content in response.content:
                 if hasattr(content, 'annotations') and content.annotations:
-                    logging.info("=== ВСЕ АННОТАЦИИ ===")
-                    logging.info(content.annotations)
+                    logging.info("\n=== НАЙДЕНЫ АННОТАЦИИ ===")  # Используем print для наглядности
+                    for annotation in content.annotations:
+                        if hasattr(annotation, 'url'):
+                            logging.info(f"URL: {annotation.url}")
+                            if hasattr(annotation, 'title'):
+                                print(f"Title: {annotation.title}")
+                            logging.info("------")
+                    return
+
+        logging.info("Аннотации не найдены в ответе")
 
     except Exception as e:
-        logging.error(f"Ошибка: {str(e)}")
-
+        logging.info(f"Ошибка при логировании аннотаций: {str(e)}")
 # Функция генерации плана занятия
 def generate_lesson_plan_interface(
         нарушение, возраст_ребенка, особые_условия,
@@ -123,8 +127,9 @@ def generate_lesson_plan_interface(
         stream=False
     )
 ####### БЕЗ СТРИМИНГА
-    return response.output_text
     log_annotations_directly(response)
+    return response.output_text
+
 
 ####### СТРИМИНГ
 #    try:
