@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
+import logging
 import gradio as gr
 import time
 from datetime import datetime
@@ -9,6 +10,13 @@ from docx import Document
 import tempfile
 import random  # для случайного выбора цитаты
 from app.quotes import quotes
+
+# Настройка логирования
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler()]
+)  # Вывод в консоль
 
 # Загрузка переменных окружения
 load_dotenv()
@@ -111,16 +119,15 @@ def generate_lesson_plan_interface(
 ####### СТРИМИНГ
     try:
         for event in response:
-            # 1. Выводим чанки текста пользователю
             if event.type == 'response.output_text.delta':
                 yield event.delta
 
-            # 2. Ловим web_search_call и сразу логируем
             elif event.type == 'web_search_call':
-                print("\n=== WEB SEARCH CALL ===")
-                print(f"ID: {event.id}")
-                print(f"Status: {event.status}")
-                print("=======================\n")
+                # Логируем
+                logging.info("\n=== WEB SEARCH CALL ===")
+                logging.info(f"ID: {event.id}")
+                logging.info(f"Status: {event.status}")
+                logging.info("=======================\n")
 
     except Exception as e:
         yield f"Ошибка: {str(e)}"

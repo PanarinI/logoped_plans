@@ -1,6 +1,8 @@
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
+import logging
+
 import gradio as gr
 import time
 from datetime import datetime
@@ -9,6 +11,8 @@ from docx import Document
 import tempfile
 import random  # для случайного выбора цитаты
 from app.quotes import quotes
+
+
 
 # Загрузка переменных окружения
 load_dotenv()
