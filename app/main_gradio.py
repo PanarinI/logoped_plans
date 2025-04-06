@@ -7,7 +7,8 @@ from datetime import datetime
 import calendar
 from docx import Document
 import tempfile
-
+import random # для случайного выбора цитаты
+from app.quotes import quotes
 # Загрузка переменных окружения
 load_dotenv()
 api_key = os.getenv("API_KEY_openai")
@@ -108,21 +109,16 @@ def generate_lesson_plan_interface(
 #    return response.choices[0].message.content
 
 # Интерфейс Gradio
-css = """
-.gr-checkbox .tooltip {
-    color: #1976D2 !important;
-    font-size: 0.9em !important;
-}
-"""
-with gr.Blocks(css="app/styles.css") as demo:
+with gr.Blocks() as demo:
     gr.Markdown("## 🧠 Генератор логопедических занятий")
 
-    # Сскрытое поле для хранения текста конспекта (для скачивания)
-    hidden_text = gr.Textbox(visible=False)
+    hidden_text = gr.Textbox(visible=False)     # скрытое поле для хранения текста конспекта (для скачивания)
 
     with gr.Row():
         # Первый блок настройки (Ребенок)
         with gr.Column(scale=1):
+            quote_box = gr.Markdown(random.choice(quotes), elem_classes=["quote-block"])
+
             gr.Markdown("### 🧒 Ребёнок", elem_classes=["block-title"])
             нарушение = gr.Textbox(label="Основное нарушение*",
                                    placeholder="Пример: Дислалия (свистящие), ОНР II уровня")
@@ -174,21 +170,21 @@ with gr.Blocks(css="app/styles.css") as demo:
 
             # Кнопка создания конспекта
             btn = gr.Button("Создать конспект", variant="primary")
+
         # Правая колонка — результат (output)
         with gr.Column(scale=2):  # Правая колонка — результат
-            output = gr.Markdown("")
             download_btn = gr.DownloadButton(
                 label="⬇️ Скачать .docx",
                 visible=False
             )
             output = gr.Markdown("")  # Поле для вывода конспекта
+
     # Ввод параметров
     all_inputs = [
         нарушение, возраст, особые_условия,
         формат, количество_детей, цель, тема, длительность,
         инвентарь, дз, web, web_sources
     ]
-
 
     # Функция для генерации docx файла
     def generate_docx(text: str):
@@ -223,19 +219,18 @@ with gr.Blocks(css="app/styles.css") as demo:
         # Генерация конспекта
         result = generate_lesson_plan_interface(*args)
         file_path = generate_docx(result)
-
+        random_quote = random.choice(quotes)
         yield (
             *[gr.update(interactive=True) for _ in all_inputs],
             gr.update(value=result),
             gr.update(visible=True, value=file_path),  # Передаём путь к файлу прямо в DownloadButton
-            file_path  # Возвращаем путь к файлу
         )
 
     # Привязываем обработчики
     btn.click(
     fn=on_submit_with_spinner,
     inputs=all_inputs,
-    outputs=[* all_inputs, output, download_btn, hidden_text]
+    outputs=[* all_inputs, output, download_btn]
     )
 
 

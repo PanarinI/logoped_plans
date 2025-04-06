@@ -31,3 +31,11 @@
   font-weight: normal;
   color: #333;
 }
+
+/* тэглайн цитата */
+.quote-block {
+    font-style: italic;
+    color: #555;
+    margin-bottom: 1em;
+    font-size: 0.95em;
+}
