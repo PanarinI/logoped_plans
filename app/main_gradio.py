@@ -104,18 +104,15 @@ def generate_lesson_plan_interface(
             if event.type == 'response.output_text.delta':
                 delta = event.delta
                 full_text.append(delta)
-                yield delta
-            elif event.type == 'response.completed':
-                # Отправляем полный текст ОДИН раз
-                yield ''.join(full_text)
-                return  # Завершаем генерацию
+                yield delta  # Только потоковая передача частей
+        # После завершения стрима отправляем пустой маркер
+        yield None  # Сигнал завершения
     except Exception as e:
         yield f"Ошибка: {str(e)}"
     finally:
-        # Если токены закончились, отправляем что есть
+        # Если токены закончились, отправляем собранный текст
         if full_text:
             yield ''.join(full_text)
-
 
 #    response = client.chat.completions.create(
 #        model="gpt-4o-mini",
@@ -237,6 +234,8 @@ with gr.Blocks() as demo:
         try:
             while True:
                 chunk = next(stream_generator)
+                if chunk is None:  # Обнаружен сигнал завершения
+                    break
                 if isinstance(chunk, str):
                     result.append(chunk)
                     yield (
