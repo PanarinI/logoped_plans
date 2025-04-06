@@ -98,7 +98,9 @@ def generate_lesson_plan_interface(
         max_output_tokens=2000,
         stream=True
     )
-    full_response = response.text
+
+    return response.output_text
+#    full_response = response.text
 #    try:
 #        for event in response:
 #            if event.type == 'response.output_text.delta':
