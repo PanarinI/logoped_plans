@@ -30,23 +30,29 @@ client = OpenAI(api_key=api_key)
 
 def log_annotations_directly(response):
     try:
-        # Проверяем наличие аннотаций в структуре ответа
+        # Проверяем структуру ответа согласно документации
         if hasattr(response, 'content'):
-            for content in response.content:
-                if hasattr(content, 'annotations') and content.annotations:
-                    logging.info("\n=== НАЙДЕНЫ АННОТАЦИИ ===")  # Используем print для наглядности
-                    for annotation in content.annotations:
-                        if hasattr(annotation, 'url'):
-                            logging.info(f"URL: {annotation.url}")
-                            if hasattr(annotation, 'title'):
-                                print(f"Title: {annotation.title}")
-                            logging.info("------")
-                    return
+            for item in response.content:
+                if getattr(item, 'type', None) == 'message' and hasattr(item, 'content'):
+                    for content in item.content:
+                        if hasattr(content, 'annotations') and content.annotations:
+                            logging.info("\n=== НАЙДЕНЫ АННОТАЦИИ ===")
+                            for annotation in content.annotations:
+                                if getattr(annotation, 'type', None) == 'url_citation':
+                                    logging.info(f"URL: {getattr(annotation, 'url', 'N/A')}")
+                                    logging.info(f"Title: {getattr(annotation, 'title', 'N/A')}")
+                                    logging.info(
+                                        f"Text range: {getattr(annotation, 'start_index', 0)}-{getattr(annotation, 'end_index', 0)}")
+                                    logging.info("------")
+                            return
 
         logging.info("Аннотации не найдены в ответе")
 
     except Exception as e:
+        logging.error(f"Ошибка при логировании аннотаций: {str(e)}")
+    except Exception as e:
         logging.info(f"Ошибка при логировании аннотаций: {str(e)}")
+
 # Функция генерации плана занятия
 def generate_lesson_plan_interface(
         нарушение, возраст_ребенка, особые_условия,
