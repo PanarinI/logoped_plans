@@ -232,20 +232,33 @@ with gr.Blocks() as demo:
                     result.append(chunk)
                     yield (
                         *[gr.update(interactive=False) for _ in all_inputs],
-                        gr.update(value="".join(result)),  # Обновляем вывод
+                        gr.update(value="".join(result)),
                         gr.update(visible=False)
                     )
                 else:
                     # Обработка завершения
-                    file_path = generate_docx(chunk)
+                    full_text = chunk  # Сохраняем полный текст
+                    file_path = generate_docx(full_text)
                     yield (
-                        *[gr.update(interactive=True) for _ in all_inputs],
-                        gr.update(value=chunk),
-                        gr.update(visible=True, value=file_path),
+                        *[gr.update(interactive=True) for _ in all_inputs],  # Разблокируем поля
+                        gr.update(value=full_text),  # Отображаем полный текст
+                        gr.update(visible=True, value=file_path),  # Показываем кнопку
                     )
+                    return  # Добавляем return для выхода после завершения
         except StopIteration:
-            pass
-
+            # Обработка ручного прерывания
+            yield (
+                *[gr.update(interactive=True) for _ in all_inputs],
+                gr.update(value="⚠️ Генерация прервана"),
+                gr.update(visible=False)
+            )
+        except Exception as e:
+            # Обработка ошибок
+            yield (
+                *[gr.update(interactive=True) for _ in all_inputs],
+                gr.update(value=f"❌ Ошибка: {str(e)}"),
+                gr.update(visible=False)
+            )
     # Привязываем обработчики
     btn.click(
         fn=on_submit_with_spinner,
