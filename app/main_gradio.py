@@ -11,12 +11,12 @@ import random # для случайного выбора цитаты
 from app.quotes import quotes
 # Загрузка переменных окружения
 load_dotenv()
-#api_key = os.getenv("API_KEY_openai")
-#client = OpenAI(api_key=api_key)
+api_key = os.getenv("API_KEY_openai")
+client = OpenAI(api_key=api_key)
 
-API_KEY = os.getenv("API_KEY")
-BASE_URL = os.getenv("BASE_URL")
-client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
+#API_KEY = os.getenv("API_KEY")
+#BASE_URL = os.getenv("BASE_URL")
+#client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
 
 
 # Функция генерации плана занятия
@@ -75,38 +75,38 @@ def generate_lesson_plan_interface(
         6. **Рекомендации по особым условиям** (если указан параметр "Особые условия")
         """
 
-#    tools = []
-#    tool_choice = None
+    tools = []
+    tool_choice = None
 
-#    if params['разрешен_web_search']:
-#        tools.append({
-#            "type": "web_search_preview",
-#            "search_context_size": "medium",
-#            "user_location": {
-#                "type": "approximate",
-#                "country": "RU"
-#            }
-#        })
-#        tool_choice = {"type": "web_search_preview"}
+    if params['разрешен_web_search']:
+        tools.append({
+            "type": "web_search_preview",
+            "search_context_size": "medium",
+            "user_location": {
+                "type": "approximate",
+                "country": "RU"
+            }
+        })
+        tool_choice = {"type": "web_search_preview"}
 
-#    response = client.responses.create(
-#        model="gpt-4o-mini",
-#        input=prompt,
-#        tools=tools if tools else None,
-#        tool_choice=tool_choice,
-#        max_output_tokens=2000,
-#        stream=True  # <-- Добавлено
-#    )
-
-    response = client.chat.completions.create(
+    response = client.responses.create(
         model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "Ты — эксперт в области логопедии."},
-            {"role": "user", "content": prompt}
-        ],
-        max_tokens=2000,
-        stream=True  # Включаем потоковый режим
+        input=prompt,
+        tools=tools if tools else None,
+        tool_choice=tool_choice,
+        max_output_tokens=2000,
+        stream=True
     )
+
+#    response = client.chat.completions.create(
+#        model="gpt-4o-mini",
+#        messages=[
+#            {"role": "system", "content": "Ты — эксперт в области логопедии."},
+#            {"role": "user", "content": prompt}
+#        ],
+#        max_tokens=2000,
+#        stream=True  # Включаем потоковый режим
+#    )
 
     for chunk in response:
         if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
