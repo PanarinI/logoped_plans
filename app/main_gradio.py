@@ -108,9 +108,14 @@ def generate_lesson_plan_interface(
 #        stream=True  # Включаем потоковый режим
 #    )
 
-    for chunk in response:
-        if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
-            yield chunk.choices[0].delta.content
+    try:
+        for event in response:
+            if event.type == 'response.output_text.delta':
+                yield event.delta
+            elif event.type == 'response.completed':
+                break
+    except Exception as e:
+        yield f"Ошибка: {str(e)}"
 
 # Интерфейс Gradio
 with gr.Blocks() as demo:
