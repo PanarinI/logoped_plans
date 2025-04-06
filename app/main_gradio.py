@@ -232,7 +232,7 @@ with gr.Blocks() as demo:
                     result.append(chunk)
                     yield (
                         *[gr.update(interactive=False) for _ in all_inputs],
-                        gr.update(value="".join(result)),
+                        gr.update(value="".join(result)),  # Обновляем вывод
                         gr.update(visible=False)
                     )
                 else:
@@ -240,20 +240,29 @@ with gr.Blocks() as demo:
                     full_text = chunk  # Сохраняем полный текст
                     file_path = generate_docx(full_text)
                     yield (
-                        *[gr.update(interactive=True) for _ in all_inputs],  # Разблокируем поля
+                        *[gr.update(interactive=True) for _ in all_inputs],
                         gr.update(value=full_text),  # Отображаем полный текст
                         gr.update(visible=True, value=file_path),  # Показываем кнопку
                     )
-                    return  # Добавляем return для выхода после завершения
+                    return  # Немедленный выход после завершения
         except StopIteration:
-            # Обработка ручного прерывания
-            yield (
-                *[gr.update(interactive=True) for _ in all_inputs],
-                gr.update(value="⚠️ Генерация прервана"),
-                gr.update(visible=False)
-            )
+            # Если генератор закончился нормально
+            if result:
+                full_text = "".join(result)
+                file_path = generate_docx(full_text)
+                yield (
+                    *[gr.update(interactive=True) for _ in all_inputs],
+                    gr.update(value=full_text),
+                    gr.update(visible=True, value=file_path),
+                )
+            else:
+                yield (
+                    *[gr.update(interactive=True) for _ in all_inputs],
+                    gr.update(value="⚠️ Генерация прервана"),
+                    gr.update(visible=False)
+                )
         except Exception as e:
-            # Обработка ошибок
+            # Обработка других ошибок
             yield (
                 *[gr.update(interactive=True) for _ in all_inputs],
                 gr.update(value=f"❌ Ошибка: {str(e)}"),
