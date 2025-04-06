@@ -28,6 +28,35 @@ client = OpenAI(api_key=api_key)
 # BASE_URL = os.getenv("BASE_URL")
 # client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
 
+def log_response_annotations(response):
+    try:
+        for event in response:
+            # Ловим завершенное сообщение с аннотациями
+            if event.type == 'message' and getattr(event, 'status', None) == 'completed':
+                for content in getattr(event, 'content', []):
+                    if content.type == 'output_text':
+                        annotations = getattr(content, 'annotations', [])
+
+                        # Логируем найденные аннотации
+                        if annotations:
+                            logging.info("=== НАЙДЕНЫ ССЫЛКИ В АННОТАЦИЯХ ===")
+                            for ann in annotations:
+                                if ann.type == 'url_citation':
+                                    logging.info(f"URL: {ann.url}")
+                                    logging.info(f"Title: {ann.title}")
+                                    logging.info(f"Text range: {ann.start_index}-{ann.end_index}")
+                                    logging.info("-----------------------")
+                        else:
+                            logging.info("=== ССЫЛКИ В АННОТАЦИЯХ ОТСУТСТВУЮТ ===")
+
+                        # Выводим полный текст ответа
+                        logging.info("\nПОЛНЫЙ ТЕКСТ ОТВЕТА:")
+                        logging.info(content.text)
+
+                return  # Прерываем после первого завершенного сообщения
+
+    except Exception as e:
+        logging.error(f"Ошибка логирования: {str(e)}")
 
 # Функция генерации плана занятия
 def generate_lesson_plan_interface(
@@ -113,49 +142,21 @@ def generate_lesson_plan_interface(
         max_output_tokens=3000,
         stream=True
     )
+    log_response_annotations(response)
 ####### БЕЗ СТРИМИНГА
 #    return response.output_text
 
 ####### СТРИМИНГ
-    full_text = ""
-    sources = []
-
     try:
         for event in response:
-            # Обрабатываем текстовые дельты (если есть)
             if event.type == 'response.output_text.delta':
-                full_text += event.delta
-
-            # Ловим завершенное сообщение с данными
-            elif event.type == 'message' and getattr(event, 'status', None) == 'completed':
-                for content_item in getattr(event, 'content', []):
-                    if getattr(content_item, 'type', None) == 'output_text':
-                        # Получаем полный текст
-                        full_text = getattr(content_item, 'text', '')
-
-                        # Собираем источники
-                        for annotation in getattr(content_item, 'annotations', []):
-                            if getattr(annotation, 'type', None) == 'url_citation':
-                                sources.append(
-                                    f"🔗 {getattr(annotation, 'title', 'Без названия')}: "
-                                    f"{getattr(annotation, 'url', 'URL не указан')}"
-                                )
-
-            # Логируем веб-поиск (по желанию)
-            elif event.type == 'web_search_call':
-                logging.info(f"[Поиск] ID: {event.id}, Status: {event.status}")
-
-        # Выводим результат
-        logging.info("\n" + "=" * 50 + " РЕЗУЛЬТАТ " + "=" * 50)
-        logging.info(full_text)
-
-        if sources:
-            logging.info("\n" + "=" * 45 + " ИСПОЛЬЗОВАННЫЕ ИСТОЧНИКИ " + "=" * 45)
-            for i, source in enumerate(sources, 1):
-                logging.info(f"{i}. {source}")
-
+                yield event.delta
+            elif event.type == 'response.completed':
+                break
     except Exception as e:
-        logging.info(f"\n⚠️ Ошибка: {str(e)}")
+        yield f"Ошибка: {str(e)}"
+
+
 
 
 ############# COMPLETIONS (РАБОТАЕТ БЕЗ TOOLS)

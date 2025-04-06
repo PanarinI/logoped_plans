@@ -20,6 +20,23 @@ client = OpenAI(api_key=api_key)
 # BASE_URL = os.getenv("BASE_URL")
 # client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
 
+import logging
+
+
+def log_annotations_directly(response):
+    try:
+        # Получаем полный ответ (без стриминга)
+        full_response = response.output_text
+
+        # Ищем аннотации в структуре ответа
+        if hasattr(response, 'content') and response.content:
+            for content in response.content:
+                if hasattr(content, 'annotations') and content.annotations:
+                    logging.info("=== ВСЕ АННОТАЦИИ ===")
+                    logging.info(content.annotations)
+
+    except Exception as e:
+        logging.error(f"Ошибка: {str(e)}")
 
 # Функция генерации плана занятия
 def generate_lesson_plan_interface(
@@ -107,6 +124,7 @@ def generate_lesson_plan_interface(
     )
 ####### БЕЗ СТРИМИНГА
     return response.output_text
+    log_annotations_directly(response)
 
 ####### СТРИМИНГ
 #    try:
