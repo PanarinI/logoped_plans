@@ -20,7 +20,7 @@ client = OpenAI(api_key=api_key)
 
 
 # Функция генерации плана занятия
-def generate_lesson_plan_interface(
+def generate_lesson_plan_interface_stream(
     нарушение, возраст_ребенка, особые_условия,
     формат_занятия, количество_детей, цель_занятия, тема, длительность_занятия,
     инвентарь, наличие_ДЗ, разрешен_web_search, web_sources, текущий_месяц=None
@@ -89,14 +89,20 @@ def generate_lesson_plan_interface(
         })
         tool_choice = {"type": "web_search_preview"}
 
-    response = client.responses.create(
+    stream = client.responses.create(
         model="gpt-4o-mini",
         input=prompt,
         tools=tools if tools else None,
         tool_choice=tool_choice,
-        max_output_tokens=2000
+        max_output_tokens=2000,
+        stream=True
     )
-    return response.output_text
+
+    full_response = ""
+    for event in stream:
+        if hasattr(event, 'output_text'):
+            full_response += event.output_text
+            yield full_response  # Возвращаем накопленный ответ
 
 #    response = client.chat.completions.create(
 #        model="gpt-4o-mini",
@@ -197,40 +203,50 @@ with gr.Blocks() as demo:
         return file_path
 
 
-    def on_submit_with_spinner(*args):
+    def on_submit_with_streaming(*args):
         # Проверка обязательных полей
         if not args[0] or not args[1] or not args[5]:
-            yield (
+            return (
                 *[gr.update(interactive=True) for _ in all_inputs],
                 gr.update(value="❗Заполните обязательные поля: нарушение, возраст, цель занятия"),
                 gr.update(visible=False),
                 ""  # Временный текст для hidden_text
             )
-            return
 
-        # Показываем спиннер
+        # Блокируем поля ввода
         yield (
             *[gr.update(interactive=False) for _ in all_inputs],
-            gr.update(value="⏳ Конспект создается..."),
+            gr.update(value=""),  # Очищаем поле вывода
             gr.update(visible=False),
             ""  # Временный текст для hidden_text
         )
 
-        # Генерация конспекта
-        result = generate_lesson_plan_interface(*args)
-        file_path = generate_docx(result)
-        random_quote = random.choice(quotes)
+        # Запускаем streaming генерацию
+        full_response = ""
+        for chunk in generate_lesson_plan_interface_stream(*args):
+            full_response = chunk
+            yield (
+                *[gr.update(interactive=False) for _ in all_inputs],  # Поля остаются заблокированными
+                gr.update(value=full_response),
+                gr.update(visible=False),
+                full_response  # hidden_text
+            )
+
+        # После завершения генерации разблокируем поля и показываем кнопку скачивания
+        file_path = generate_docx(full_response)
         yield (
             *[gr.update(interactive=True) for _ in all_inputs],
-            gr.update(value=result),
-            gr.update(visible=True, value=file_path),  # Передаём путь к файлу прямо в DownloadButton
+            gr.update(value=full_response),
+            gr.update(visible=True, value=file_path),
+            full_response  # hidden_text
         )
 
-    # Привязываем обработчики
+
+    # Обновляем обработчик кнопки
     btn.click(
-    fn=on_submit_with_spinner,
-    inputs=all_inputs,
-    outputs=[* all_inputs, output, download_btn]
+        fn=on_submit_with_streaming,
+        inputs=all_inputs,
+        outputs=[*all_inputs, output, download_btn, hidden_text]
     )
 
 
