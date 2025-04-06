@@ -9,18 +9,23 @@ from docx import Document
 import tempfile
 import random  # для случайного выбора цитаты
 from app.quotes import quotes
+import logging
+
+# Настройка логирования
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler()]
+)  # Вывод в консоль
 
 # Загрузка переменных окружения
 load_dotenv()
 api_key = os.getenv("API_KEY_openai")
 client = OpenAI(api_key=api_key)
 
-
 # API_KEY = os.getenv("API_KEY")
 # BASE_URL = os.getenv("BASE_URL")
 # client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
-
-import logging
 
 
 def log_annotations_directly(response):
