@@ -95,20 +95,20 @@ def generate_lesson_plan_interface(
         input=prompt,
         tools=tools if tools else None,
         tool_choice=tool_choice,
-        max_output_tokens=2000
-#        stream=True
+        max_output_tokens=2000,
+        stream=True
     )
 
-    return response.output_text
+#    return response.output_text
 #    full_response = response.text
-#    try:
-#        for event in response:
-#            if event.type == 'response.output_text.delta':
-#                yield event.delta
-#            elif event.type == 'response.completed':
-#                break
-#    except Exception as e:
-#        yield f"Ошибка: {str(e)}"
+    try:
+        for event in response:
+            if event.type == 'response.output_text.delta':
+                yield event.delta
+            elif event.type == 'response.completed':
+                break
+    except Exception as e:
+        yield f"Ошибка: {str(e)}"
 
 
 #    response = client.chat.completions.create(
@@ -215,83 +215,58 @@ with gr.Blocks() as demo:
         return file_path
 
 
-#    def on_submit_with_spinner(*args):
-        # Проверка обязательных полей (остается без изменений)
-#        if not args[0] or not args[1] or not args[5]:
-#            yield (
-#                *[gr.update(interactive=True) for _ in all_inputs],
-#                gr.update(value="❗Заполните обязательные поля: нарушение, возраст, цель занятия"),
-#                gr.update(visible=False)
-#            )
-#            return
-
-        # Блокируем интерфейс
-#        yield (
-#            *[gr.update(interactive=False) for _ in all_inputs],
-#            gr.update(value="⏳ Конспект создается..."),
-#            gr.update(visible=False)
-#        )
-
-#        full_response = []
-#        try:
-#            for chunk in generate_lesson_plan_interface(*args):
-#                full_response.append(chunk)
-#                yield (
-#                    *[gr.update(interactive=False) for _ in all_inputs],
-#                    gr.update(value="".join(full_response)),
-#                    gr.update(visible=False)
-#                )
-
-            # После завершения стрима
-#           file_path = generate_docx("".join(full_response))
-#            yield (
-#                *[gr.update(interactive=True) for _ in all_inputs],
-#                gr.update(value="".join(full_response)),
-#                gr.update(visible=True, value=file_path)
-#            )
-
-#        except Exception as e:
-#            yield (
-#                *[gr.update(interactive=True) for _ in all_inputs],
-#                gr.update(value=f"❌ Ошибка: {str(e)}"),
-#                gr.update(visible=False)
-#            )
-
     def on_submit_with_spinner(*args):
+        # Проверка обязательных полей (остается без изменений)
         if not args[0] or not args[1] or not args[5]:
-            return (
+            yield (
                 *[gr.update(interactive=True) for _ in all_inputs],
                 gr.update(value="❗Заполните обязательные поля: нарушение, возраст, цель занятия"),
                 gr.update(visible=False)
             )
+            return
 
         # Блокируем интерфейс
+        yield (
+            *[gr.update(interactive=False) for _ in all_inputs],
+            gr.update(value="⏳ Конспект создается..."),
+            gr.update(visible=False)
+        )
+
+        full_response = []
         try:
-            response_text = generate_lesson_plan_interface(*args)
-            file_path = generate_docx(response_text)
-            return (
+            for chunk in generate_lesson_plan_interface(*args):
+                full_response.append(chunk)
+                yield (
+                    *[gr.update(interactive=False) for _ in all_inputs],
+                    gr.update(value="".join(full_response)),
+                    gr.update(visible=False)
+                )
+
+            # После завершения стрима
+            file_path = generate_docx("".join(full_response))
+            yield (
                 *[gr.update(interactive=True) for _ in all_inputs],
-                gr.update(value=response_text),
+                gr.update(value="".join(full_response)),
                 gr.update(visible=True, value=file_path)
             )
 
         except Exception as e:
-            return (
+            yield (
                 *[gr.update(interactive=True) for _ in all_inputs],
                 gr.update(value=f"❌ Ошибка: {str(e)}"),
                 gr.update(visible=False)
             )
+
     # Привязываем обработчики
     btn.click(
         fn=on_submit_with_spinner,
         inputs=all_inputs,
-        outputs=[*all_inputs, output, download_btn])
-#    ).then(
-#        # Этот then нужен для корректного завершения стриминга
-#        lambda: None,
-#        inputs=[],
-#        outputs=[]
-#    )
+        outputs=[*all_inputs, output, download_btn]
+    ).then(
+        lambda: None,
+        inputs=[],
+        outputs=[]
+    )
 
 if __name__ == "__main__":
     demo.launch(share=True)
