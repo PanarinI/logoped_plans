@@ -28,7 +28,8 @@ def generate_lesson_plan_interface(
         инвентарь, наличие_ДЗ, разрешен_web_search, web_sources, текущий_месяц=None
 ):
     # Логика работы с источниками - если есть, передаем
-    источники = [web_sources] if разрешен_web_search else []
+    источники = [web_sources] if разрешен_web_search and web_sources else []
+
 
     # Логика определения месяца
     if not текущий_месяц:
@@ -53,30 +54,33 @@ def generate_lesson_plan_interface(
 
     if формат_занятия == "Индивидуальное":
         params["количество_детей"] = 1
+    # Вставка строки с источниками, если они есть
+    источники_строка = f"- **Источники поиска:** {'; '.join(источники)}" if разрешен_web_search and источники else ""
 
     prompt = f"""
-        Ты — эксперт в области логопедии, специализирующийся на разработке занятий для детей с речевыми нарушениями. На вход ты получаешь следующие параметры:
-        - **Основное нарушение:** {params['нарушение']}
-        - **Возраст ребенка:** {params['возраст_ребенка']}
+        Ты — эксперт в области логопедии, специализирующийся на разработке занятий для детей с речевыми нарушениями. 
+        Ты получаешь запрос на разработку занятия со следующими параметрами:
+        - **Основное нарушение ребенка:** {params['нарушение']}
+        - **Возраст:** {params['возраст_ребенка']}
         - **Цель занятия:** {params['цель_занятия']}
         - **Тема:** {params['тема'] or "не указано. Придумай сам, опираясь на данные о ребенке и цели занятия"}
         - **Формат занятия:** {params['формат_занятия']} ({params['количество_детей']} детей)
-        - **Инвентарь:** {params['инвентарь'] or "не указано"}
-        - **Особые условия:** {params['особые_условия'] or "не указано"}
+        - **Доступный инвентарь:** {params['инвентарь'] or "не указано, на твое усмотрение"}
+        - **Особые условия:** {params['особые_условия'] or "отсутствуют"}
         - **Длительность занятия:** {params['длительность_занятия']} минут
         - **Наличие домашнего задания:** {params['наличие_ДЗ']}
         - **Поиск по интернету:** {params['разрешен_web_search']}
-        - **Текущий месяц:** {params['текущий_месяц']}
-
-        На основе этих параметров составь конспект занятия, который должен включать:
-        1. **Тема занятия, цель и задачи** 
-        2. **Необходимые материалы**
-        3. **Ход занятия**. Разбей занятие на логически последовательные этапы.
-        В каждый этап встрой конкретные упражнения с достаточным количеством примеров.
-        СТРОГО: **если разрешен поиск по интернету: True**, то обязательно выстрой занятие на базе упражнений из релевантных источников. 
+        - **Текущий месяц :** {params['текущий_месяц']} (1=январь и т.д.)
+        {источники_строка}
+        На основе этих параметров составь план занятия, который должен включать:
+        1. **Тема занятия, цель и задачи (не более 3-х)** 
+        2. **Необходимый инвентарь**
+        3. **Ход занятия**. Состоит из логически последовательных этапов.
+        В каждый этап встроены конкретные упражнения с достаточным количеством примеров.
+        СТРОГО: **если поиск по интернету: True**, то обязательно выстрой занятие на базе упражнений из релевантных источников. 
         Обязательно **приведи ссылки на источники** в тексте ответа.
-        5. **Домашнее задание** (только если параметр "наличие домашнего задания: True", иначе не пиши)
-        6. **Рекомендации по особым условиям** (если указан параметр "Особые условия", иначе не пиши)
+        5. **Домашнее задание** (только если параметр "наличие домашнего задания: True", иначе пропусти)
+        6. **Рекомендации по особым условиям** (если указан параметр "Особые условия", иначе пропусти)
         """
 
     tools = []
@@ -98,23 +102,21 @@ def generate_lesson_plan_interface(
         input=prompt,
         tools=tools if tools else None,
         tool_choice=tool_choice,
-        max_output_tokens=4000,
-        stream=False
+        max_output_tokens=3000,
+        stream=True
     )
 ####### БЕЗ СТРИМИНГА
-#    full_response = response.text -- ???
-    return response.output_text
+#    return response.output_text
+
 ####### СТРИМИНГ
-#    try:
-#        for event in response:
-#            if event.type == 'response.output_text.delta':
-#                yield event.delta
-#            elif event.type == 'response.completed':
-#                break
-#    except Exception as e:
-#        yield f"Ошибка: {str(e)}"
-
-
+    try:
+        for event in response:
+            if event.type == 'response.output_text.delta':
+                yield event.delta
+            elif event.type == 'response.completed':
+                break
+    except Exception as e:
+        yield f"Ошибка: {str(e)}"
 
 
 ############# COMPLETIONS (РАБОТАЕТ БЕЗ TOOLS)
@@ -164,8 +166,8 @@ with gr.Blocks() as demo:
             цель = gr.Textbox(label="Цель занятия*", placeholder="Пример: Автоматизация звука [Р] в слогах")
             тема = gr.Textbox(label="Тема", placeholder="Пример: Животные, Транспорт")
             длительность = gr.Slider(label="Длительность занятия (мин)", minimum=15, maximum=60, value=30, step=5)
-            инвентарь = gr.Textbox(label="Инвентарь (введите через запятую)",
-                                   placeholder="Пример: Зеркало, Карточки, Игрушки")
+            инвентарь = gr.Textbox(label="Инвентарь (через запятую)",
+                                   placeholder="Пример: Зеркало, Карточки, Куклы")
 
             дз = gr.Checkbox(label="Домашнее задание")
             # Выделенный блок для профессиональных ресурсов
@@ -180,7 +182,7 @@ with gr.Blocks() as demo:
                 )
 
             web_sources = gr.Textbox(
-                label="Уточнить источники (необязательно):",
+                label="Уточнить источники (необязательно, через запятую):",
                 placeholder="Например: Logopedy.ru, Maam.ru, ...",
                 visible=False,
             )
@@ -222,86 +224,85 @@ with gr.Blocks() as demo:
         return file_path
 
 ################### СТРИМИНГ
-#    def on_submit_with_spinner(*args):
-#        # Проверка обязательных полей (остается без изменений)
-#        if not args[0] or not args[1] or not args[5]:
-#            yield (
-#                *[gr.update(interactive=True) for _ in all_inputs],
-#                gr.update(value="❗Заполните обязательные поля: нарушение, возраст, цель занятия"),
-#                gr.update(visible=False)
-#            )
-#            return
-
-        # Блокируем интерфейс
-#        yield (
-#            *[gr.update(interactive=False) for _ in all_inputs],
-#            gr.update(value="⏳ Конспект создается..."),
-#            gr.update(visible=False)
-#        )
-
-#        full_response = []
-#        try:
-#            for chunk in generate_lesson_plan_interface(*args):
-#                full_response.append(chunk)
-#                yield (
-#                    *[gr.update(interactive=False) for _ in all_inputs],
-#                    gr.update(value="".join(full_response)),
-#                    gr.update(visible=False)
-#                )
-
-#            # После завершения стрима
-#            file_path = generate_docx("".join(full_response))
-#            yield (
-#                *[gr.update(interactive=True) for _ in all_inputs],
-#                gr.update(value="".join(full_response)),
-#                gr.update(visible=True, value=file_path)
-#            )
-
-#        except Exception as e:
-#            yield (
-#                *[gr.update(interactive=True) for _ in all_inputs],
-#                gr.update(value=f"❌ Ошибка: {str(e)}"),
-#                gr.update(visible=False)
-#            )
-
-################## БЕЗ СТРИМИНГА
     def on_submit_with_spinner(*args):
+        # Проверка обязательных полей (остается без изменений)
         if not args[0] or not args[1] or not args[5]:
-            return (
+            yield (
                 *[gr.update(interactive=True) for _ in all_inputs],
                 gr.update(value="❗Заполните обязательные поля: нарушение, возраст, цель занятия"),
                 gr.update(visible=False)
             )
+            return
 
         # Блокируем интерфейс
+        yield (
+            *[gr.update(interactive=False) for _ in all_inputs],
+            gr.update(value="⏳ Конспект создается..."),
+            gr.update(visible=False)
+        )
+
+        full_response = []
         try:
-            response_text = generate_lesson_plan_interface(*args)
-            file_path = generate_docx(response_text)
-            return (
+            for chunk in generate_lesson_plan_interface(*args):
+                full_response.append(chunk)
+                yield (
+                    *[gr.update(interactive=False) for _ in all_inputs],
+                    gr.update(value="".join(full_response)),
+                    gr.update(visible=False)
+                )
+
+            # После завершения стрима
+            file_path = generate_docx("".join(full_response))
+            yield (
                 *[gr.update(interactive=True) for _ in all_inputs],
-                gr.update(value=response_text),
+                gr.update(value="".join(full_response)),
                 gr.update(visible=True, value=file_path)
             )
 
         except Exception as e:
-            return (
+            yield (
                 *[gr.update(interactive=True) for _ in all_inputs],
                 gr.update(value=f"❌ Ошибка: {str(e)}"),
                 gr.update(visible=False)
             )
 
+################## БЕЗ СТРИМИНГА
+#    def on_submit_with_spinner(*args):
+#        if not args[0] or not args[1] or not args[5]:
+#            return (
+#                *[gr.update(interactive=True) for _ in all_inputs],
+#                gr.update(value="❗Заполните обязательные поля: нарушение, возраст, цель занятия"),
+#                gr.update(visible=False)
+#            )
+
+        # Блокируем интерфейс
+#        try:
+#            response_text = generate_lesson_plan_interface(*args)
+#            file_path = generate_docx(response_text)
+#            return (
+#                *[gr.update(interactive=True) for _ in all_inputs],
+#                gr.update(value=response_text),
+#                gr.update(visible=True, value=file_path)
+#            )
+
+#        except Exception as e:
+#            return (
+#                *[gr.update(interactive=True) for _ in all_inputs],
+#                gr.update(value=f"❌ Ошибка: {str(e)}"),
+#                gr.update(visible=False)
+#            )
 
 
     # Привязываем обработчики
     btn.click(
         fn=on_submit_with_spinner,
         inputs=all_inputs,
-        outputs=[*all_inputs, output, download_btn]) # скобку при смене
-#    ).then(
-#        lambda: None,
-#        inputs=[],
-#        outputs=[]
-#    )
+        outputs=[*all_inputs, output, download_btn] # <- скобку если не стримминг
+    ).then(
+        lambda: None,
+        inputs=[],
+        outputs=[]
+    )
 
 if __name__ == "__main__":
     demo.launch(share=True)
