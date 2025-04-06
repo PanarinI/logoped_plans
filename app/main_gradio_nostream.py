@@ -134,8 +134,13 @@ def generate_lesson_plan_interface(
     )
 ####### БЕЗ СТРИМИНГА
     #log_annotations_directly(response)
-    annotations = response.output[1].content[0].annotations
-    logging.info(f"Найденные аннотации: {annotations}")
+    # Берём весь блок content из ответа
+    content_block = response.output[1].content[0]
+    logging.info(f"=== ПОЛНЫЙ КОНТЕНТ БЛОКА ===")
+    logging.info(f"Тип: {content_block.type}")
+    logging.info(f"Текст: {content_block.text[:200]}...")  # Первые 200 символов текста
+    logging.info(f"Аннотации: {content_block.annotations}")
+    logging.info(f"Сырые данные: {vars(content_block)}")  # Вся техническая информация
     return response.output_text
 
 
