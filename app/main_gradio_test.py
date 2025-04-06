@@ -95,8 +95,8 @@ def generate_lesson_plan_interface(
         input=prompt,
         tools=tools if tools else None,
         tool_choice=tool_choice,
-        max_output_tokens=2000,
-        stream=True
+        max_output_tokens=2000
+#        stream=True
     )
 
     return response.output_text
