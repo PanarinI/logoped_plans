@@ -100,14 +100,13 @@ def generate_lesson_plan_interface(
 
     full_text = []
     for event in response:
-        # Проверяем тип события и структуру данных
         if event.type == 'response.output_text.delta':
-            delta = getattr(event, 'delta', None)  # Используем getattr для безопасности
-            if delta:
-                full_text.append(delta)
-                yield delta
+            delta = event.delta  # Прямой доступ к дельте
+            full_text.append(delta)
+            yield delta  # Постепенный вывод
         elif event.type == 'response.completed':
-            yield ''.join(full_text)
+            yield ''.join(full_text)  # Финальный текст для DOCX
+
 
 #    response = client.chat.completions.create(
 #        model="gpt-4o-mini",
@@ -216,11 +215,11 @@ with gr.Blocks() as demo:
             )
             return
 
-        # Убираем спиннер и начинаем стриминг
+        # Добавляем индикатор загрузки здесь:
         yield (
-            *[gr.update(interactive=False) for _ in all_inputs],
-            gr.update(value=""),  # Очистка предыдущего вывода
-            gr.update(visible=False)
+            *[gr.update(interactive=False) for _ in all_inputs],  # Блокируем поля ввода
+            gr.update(value="⏳ Конспект создается..."),  # <-- Индикатор загрузки
+            gr.update(visible=False)  # Скрываем кнопку скачивания
         )
 
         # Генерация конспекта с стримингом
@@ -231,23 +230,21 @@ with gr.Blocks() as demo:
                 chunk = next(stream_generator)
                 if isinstance(chunk, str):
                     result.append(chunk)
-                    markdown_content = "".join(result)
                     yield (
                         *[gr.update(interactive=False) for _ in all_inputs],
-                        gr.update(value=markdown_content),
+                        gr.update(value="".join(result)),  # Обновляем вывод
                         gr.update(visible=False)
                     )
                 else:
-                    # Обработка завершения стрима
-                    full_text = chunk
-                    file_path = generate_docx(full_text)
+                    # Обработка завершения
+                    file_path = generate_docx(chunk)
                     yield (
                         *[gr.update(interactive=True) for _ in all_inputs],
-                        gr.update(value=full_text),
+                        gr.update(value=chunk),
                         gr.update(visible=True, value=file_path),
                     )
         except StopIteration:
-            pass  # Обработка завершения генератора
+            pass
 
     # Привязываем обработчики
     btn.click(
