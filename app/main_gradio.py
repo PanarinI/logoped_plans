@@ -99,13 +99,22 @@ def generate_lesson_plan_interface(
     )
 
     full_text = []
-    for event in response:
-        if event.type == 'response.output_text.delta':
-            delta = event.delta  # Прямой доступ к дельте
-            full_text.append(delta)
-            yield delta  # Постепенный вывод
-        elif event.type == 'response.completed':
-            yield ''.join(full_text)  # Финальный текст для DOCX
+    try:
+        for event in response:
+            if event.type == 'response.output_text.delta':
+                delta = event.delta
+                full_text.append(delta)
+                yield delta
+            elif event.type == 'response.completed':
+                # Отправляем полный текст ОДИН раз
+                yield ''.join(full_text)
+                return  # Завершаем генерацию
+    except Exception as e:
+        yield f"Ошибка: {str(e)}"
+    finally:
+        # Если токены закончились, отправляем что есть
+        if full_text:
+            yield ''.join(full_text)
 
 
 #    response = client.chat.completions.create(
@@ -239,6 +248,7 @@ with gr.Blocks() as demo:
                     # Обработка завершения
                     full_text = chunk  # Сохраняем полный текст
                     file_path = generate_docx(full_text)
+                    # Окончательное обновление с разблокировкой и кнопкой
                     yield (
                         *[gr.update(interactive=True) for _ in all_inputs],
                         gr.update(value=full_text),  # Отображаем полный текст
