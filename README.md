@@ -14,4 +14,5 @@ short_description: Помощник в создании логопедическ
 CHECK
 
 git add .
-git commit -,m
+git commit -m "..."
+git push space main

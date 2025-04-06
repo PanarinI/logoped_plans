@@ -30,24 +30,24 @@ client = OpenAI(api_key=api_key)
 
 def log_annotations_directly(response):
     try:
-        # Проверяем структуру ответа согласно документации
+        # Выводим ВСЮ структуру ответа для отладки
+        logging.info("### ПОЛНЫЙ ОТВЕТ ###")
+        logging.info(response)
+
+        # Выводим аннотации напрямую по документации
         if hasattr(response, 'content'):
             for item in response.content:
-                if getattr(item, 'type', None) == 'message' and hasattr(item, 'content'):
-                    for content in item.content:
-                        if hasattr(content, 'annotations') and content.annotations:
-                            logging.info("\n=== НАЙДЕНЫ АННОТАЦИИ ===")
-                            for annotation in content.annotations:
-                                if getattr(annotation, 'type', None) == 'url_citation':
-                                    logging.info(f"URL: {getattr(annotation, 'url', 'N/A')}")
-                                    logging.info(f"Title: {getattr(annotation, 'title', 'N/A')}")
-                                    logging.info(
-                                        f"Text range: {getattr(annotation, 'start_index', 0)}-{getattr(annotation, 'end_index', 0)}")
-                                    logging.info("------")
+                if hasattr(item, 'content'):
+                    for content_block in item.content:
+                        if hasattr(content_block, 'annotations'):
+                            logging.info("\n### НАЙДЕНЫ АННОТАЦИИ ###")
+                            logging.info(content_block.annotations)
                             return
 
-        logging.info("Аннотации не найдены в ответе")
+        print("Аннотаций нет в ответе")
 
+    except Exception as e:
+        print(f"ОШИБКА: {str(e)}")
     except Exception as e:
         logging.error(f"Ошибка при логировании аннотаций: {str(e)}")
     except Exception as e:
@@ -121,7 +121,7 @@ def generate_lesson_plan_interface(
     if params['разрешен_web_search']:
         tools.append({
             "type": "web_search_preview",
-            "search_context_size": "low",
+            "search_context_size": "medium",
             "user_location": {
                 "type": "approximate",
                 "country": "RU"
