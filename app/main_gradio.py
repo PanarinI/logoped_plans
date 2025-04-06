@@ -100,9 +100,17 @@ def generate_lesson_plan_interface_stream(
 
     full_response = ""
     for event in stream:
-        if hasattr(event, 'output_text'):
+        print(f"Received event: {event.type}")  # Перед обработкой события
+        # Обрабатываем только события с текстовыми дельтами
+        if event.type == "response.output_text.delta":
             full_response += event.output_text
-            yield full_response  # Возвращаем накопленный ответ
+            yield full_response
+
+        # Можно добавить обработку других событий
+        elif event.type == "response.completed":
+            break  # Завершаем при получении полного ответа
+        elif event.type == "error":
+            raise Exception(event.error)
 
 #    response = client.chat.completions.create(
 #        model="gpt-4o-mini",
@@ -223,24 +231,23 @@ with gr.Blocks() as demo:
 
         # Запускаем streaming генерацию
         full_response = ""
-        for chunk in generate_lesson_plan_interface_stream(*args):
-            full_response = chunk
+        try:
+            for chunk in generate_lesson_plan_interface_stream(*args):
+                full_response = chunk
+                yield (
+                    *[gr.update(interactive=False) for _ in all_inputs],
+                    gr.update(value=full_response),
+                    gr.update(visible=False),
+                    full_response
+                )
+        except Exception as e:
             yield (
-                *[gr.update(interactive=False) for _ in all_inputs],  # Поля остаются заблокированными
-                gr.update(value=full_response),
+                *[gr.update(interactive=True) for _ in all_inputs],
+                gr.update(value=f"Ошибка: {str(e)}"),
                 gr.update(visible=False),
-                full_response  # hidden_text
+                ""
             )
-
-        # После завершения генерации разблокируем поля и показываем кнопку скачивания
-        file_path = generate_docx(full_response)
-        yield (
-            *[gr.update(interactive=True) for _ in all_inputs],
-            gr.update(value=full_response),
-            gr.update(visible=True, value=file_path),
-            full_response  # hidden_text
-        )
-
+            return
 
     # Обновляем обработчик кнопки
     btn.click(
