@@ -183,7 +183,7 @@ with gr.Blocks() as demo:
                 label="⬇️ Скачать .docx",
                 visible=False
             )
-            output = gr.Markdown("")  # Поле для вывода конспекта
+            output = gr.Markdown("", elem_classes=["typing-animation"])  # ← Добавляем класс анимации
 
     # Ввод параметров
     all_inputs = [
