@@ -94,18 +94,9 @@ def generate_lesson_plan_interface(
         input=prompt,
         tools=tools if tools else None,
         tool_choice=tool_choice,
-        max_output_tokens=2000,
-        stream=True  # <-- Добавлено
+        max_output_tokens=2000
     )
-
-    full_text = []
-    for event in response:
-        if event.type == 'response.output_text.delta':
-            delta = event.data.delta
-            full_text.append(delta)
-            yield delta  # Возвращаем порции текста
-    # После завершения стрима верните полный текст для сохранения в docx
-    yield ''.join(full_text)
+    return response.output_text
 
 #    response = client.chat.completions.create(
 #        model="gpt-4o-mini",
@@ -214,45 +205,28 @@ with gr.Blocks() as demo:
             )
             return
 
-        # Убираем спиннер и начинаем стриминг
+        # Показываем спиннер
         yield (
             *[gr.update(interactive=False) for _ in all_inputs],
-            gr.update(value=""),  # Очистка предыдущего вывода
+            gr.update(value="⏳ Конспект создается..."),
             gr.update(visible=False)
         )
 
-        # Генерация конспекта с стримингом
-        stream_generator = generate_lesson_plan_interface(*args)
-        result = []
-        for chunk in stream_generator:
-            if isinstance(chunk, str):
-                result.append(chunk)
-                markdown_content = "".join(result)
-                yield (
-                    *[gr.update(interactive=False) for _ in all_inputs],
-                    gr.update(value=markdown_content),
-                    gr.update(visible=False)
-                )
-            else:
-                # Обработка полного текста после завершения стрима
-                full_text = chunk
-                file_path = generate_docx(full_text)
-                yield (
-                    *[gr.update(interactive=True) for _ in all_inputs],
-                    gr.update(value=full_text),
-                    gr.update(visible=True, value=file_path),
-                )
+        # Генерация конспекта
+        result = generate_lesson_plan_interface(*args)
+        file_path = generate_docx(result)
+        random_quote = random.choice(quotes)
+        yield (
+            *[gr.update(interactive=True) for _ in all_inputs],
+            gr.update(value=result),
+            gr.update(visible=True, value=file_path),  # Передаём путь к файлу прямо в DownloadButton
+        )
 
     # Привязываем обработчики
     btn.click(
-        fn=on_submit_with_spinner,
-        inputs=all_inputs,
-        outputs=[*all_inputs, output, download_btn]
-    ).then(
-        # Этот then нужен для корректного завершения стриминга
-        lambda: None,
-        inputs=[],
-        outputs=[]
+    fn=on_submit_with_spinner,
+    inputs=all_inputs,
+    outputs=[* all_inputs, output, download_btn]
     )
 
 
