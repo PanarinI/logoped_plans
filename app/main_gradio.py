@@ -20,7 +20,7 @@ client = OpenAI(api_key=api_key)
 
 
 # Функция генерации плана занятия
-def generate_lesson_plan_interface_stream(
+def generate_lesson_plan_interface(
     нарушение, возраст_ребенка, особые_условия,
     формат_занятия, количество_детей, цель_занятия, тема, длительность_занятия,
     инвентарь, наличие_ДЗ, разрешен_web_search, web_sources, текущий_месяц=None
@@ -95,22 +95,21 @@ def generate_lesson_plan_interface_stream(
         tools=tools if tools else None,
         tool_choice=tool_choice,
         max_output_tokens=2000,
-        stream=True
+        stream = True  # включаем стриминг
     )
 
     full_response = ""
+    # Обрабатываем события потока
     for event in stream:
-        print(f"Received event: {event.type}")  # Перед обработкой события
-        # Обрабатываем только события с текстовыми дельтами
-        if event.type == "response.output_text.delta":
-            full_response += event.output_text
-            yield full_response
+        # Допустим, что для текстовых обновлений используется событие типа "response.output_text.delta"
+        if event.get("type") == "response.output_text.delta":
+            delta = event.get("content", "")
+            full_response += delta
+            yield full_response  # отдаем накопленный текст
+    # Гарантируем, что последний кусок будет отправлен
+    yield full_response
 
-        # Можно добавить обработку других событий
-        elif event.type == "response.completed":
-            break  # Завершаем при получении полного ответа
-        elif event.type == "error":
-            raise Exception(event.error)
+
 
 #    response = client.chat.completions.create(
 #        model="gpt-4o-mini",
@@ -191,7 +190,7 @@ with gr.Blocks() as demo:
                 label="⬇️ Скачать .docx",
                 visible=False
             )
-            output = gr.Markdown("", elem_classes=["typing-animation"])  # ← Добавляем класс анимации
+            output = gr.Markdown("")  # Поле для вывода конспекта
 
     # Ввод параметров
     all_inputs = [
@@ -211,49 +210,52 @@ with gr.Blocks() as demo:
         return file_path
 
 
-    def on_submit_with_streaming(*args):
+    def on_submit_with_spinner(*args):
         # Проверка обязательных полей
         if not args[0] or not args[1] or not args[5]:
-            return (
+            yield (
                 *[gr.update(interactive=True) for _ in all_inputs],
                 gr.update(value="❗Заполните обязательные поля: нарушение, возраст, цель занятия"),
                 gr.update(visible=False),
                 ""  # Временный текст для hidden_text
             )
+            return
 
-        # Блокируем поля ввода
+        # Блокируем ввод, показываем спиннер
         yield (
             *[gr.update(interactive=False) for _ in all_inputs],
-            gr.update(value=""),  # Очищаем поле вывода
+            gr.update(value="⏳ Конспект создается..."),
             gr.update(visible=False),
             ""  # Временный текст для hidden_text
         )
 
-        # Запускаем streaming генерацию
-        full_response = ""
-        try:
-            for chunk in generate_lesson_plan_interface_stream(*args):
-                full_response = chunk
-                yield (
-                    *[gr.update(interactive=False) for _ in all_inputs],
-                    gr.update(value=full_response),
-                    gr.update(visible=False),
-                    full_response
-                )
-        except Exception as e:
+        # Запускаем генерацию с стримингом
+        result_generator = generate_lesson_plan_interface(*args)
+        final_result = ""
+        for partial_result in result_generator:
+            final_result = partial_result  # обновляем накопленный текст
+            # Каждый yield обновляет поле вывода (output)
             yield (
-                *[gr.update(interactive=True) for _ in all_inputs],
-                gr.update(value=f"Ошибка: {str(e)}"),
+                *[gr.update(interactive=False) for _ in all_inputs],
+                gr.update(value=final_result),
                 gr.update(visible=False),
-                ""
+                ""  # скрытый текст, если нужен для скачивания
             )
-            return
+            # Можно добавить небольшую задержку, если нужно (например, time.sleep(0.1))
 
-    # Обновляем обработчик кнопки
+        file_path = generate_docx(final_result)
+        yield (
+            *[gr.update(interactive=True) for _ in all_inputs],
+            gr.update(value=final_result),
+            gr.update(visible=True, value=file_path)
+        )
+        random_quote = random.choice(quotes)
+
+    # Привязываем обработчики
     btn.click(
-        fn=on_submit_with_streaming,
-        inputs=all_inputs,
-        outputs=[*all_inputs, output, download_btn, hidden_text]
+    fn=on_submit_with_spinner,
+    inputs=all_inputs,
+    outputs=[* all_inputs, output, download_btn]
     )
 
 
