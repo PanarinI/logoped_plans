@@ -28,30 +28,25 @@ client = OpenAI(api_key=api_key)
 # client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
 
 
-def log_annotations_directly(response):
-    try:
-        # Выводим ВСЮ структуру ответа для отладки
-        logging.info("### ПОЛНЫЙ ОТВЕТ ###")
-        logging.info(response)
+#def log_annotations_directly(response):
+#    try:
+#        # Выводим ВСЮ структуру ответа для отладки
+#        logging.info("### ПОЛНЫЙ ОТВЕТ ###")
+#        logging.info(response)
 
         # Выводим аннотации напрямую по документации
-        if hasattr(response, 'content'):
-            for item in response.content:
-                if hasattr(item, 'content'):
-                    for content_block in item.content:
-                        if hasattr(content_block, 'annotations'):
-                            logging.info("\n### НАЙДЕНЫ АННОТАЦИИ ###")
-                            logging.info(content_block.annotations)
-                            return
+#        if hasattr(response, 'content'):
+#            for item in response.content:
+#                if hasattr(item, 'content'):
+#                    for content_block in item.content:
+#                        if hasattr(content_block, 'annotations'):
+#                            logging.info("\n### НАЙДЕНЫ АННОТАЦИИ ###")
+#                            logging.info(content_block.annotations)
+#                            return
 
-        print("Аннотаций нет в ответе")
+#    except Exception as e:
+#        logging.error(f"Ошибка при логировании аннотаций: {str(e)}")
 
-    except Exception as e:
-        print(f"ОШИБКА: {str(e)}")
-    except Exception as e:
-        logging.error(f"Ошибка при логировании аннотаций: {str(e)}")
-    except Exception as e:
-        logging.info(f"Ошибка при логировании аннотаций: {str(e)}")
 
 # Функция генерации плана занятия
 def generate_lesson_plan_interface(
@@ -138,7 +133,9 @@ def generate_lesson_plan_interface(
         stream=False
     )
 ####### БЕЗ СТРИМИНГА
-    log_annotations_directly(response)
+    #log_annotations_directly(response)
+    annotations = response.output[1].content[0].annotations
+    logging.info(f"Найденные аннотации: {annotations}")
     return response.output_text
 
 
