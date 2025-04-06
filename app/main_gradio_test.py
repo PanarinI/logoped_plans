@@ -7,25 +7,26 @@ from datetime import datetime
 import calendar
 from docx import Document
 import tempfile
-import random # для случайного выбора цитаты
+import random  # для случайного выбора цитаты
 from app.quotes import quotes
+
 # Загрузка переменных окружения
 load_dotenv()
-#api_key = os.getenv("API_KEY_openai")
-#client = OpenAI(api_key=api_key)
+api_key = os.getenv("API_KEY_openai")
+client = OpenAI(api_key=api_key)
 
-API_KEY = os.getenv("API_KEY")
-BASE_URL = os.getenv("BASE_URL")
-client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
+
+# API_KEY = os.getenv("API_KEY")
+# BASE_URL = os.getenv("BASE_URL")
+# client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
 
 
 # Функция генерации плана занятия
 def generate_lesson_plan_interface(
-    нарушение, возраст_ребенка, особые_условия,
-    формат_занятия, количество_детей, цель_занятия, тема, длительность_занятия,
-    инвентарь, наличие_ДЗ, разрешен_web_search, web_sources, текущий_месяц=None
+        нарушение, возраст_ребенка, особые_условия,
+        формат_занятия, количество_детей, цель_занятия, тема, длительность_занятия,
+        инвентарь, наличие_ДЗ, разрешен_web_search, web_sources, текущий_месяц=None
 ):
-
     # Логика работы с источниками - если есть, передаем
     источники = [web_sources] if разрешен_web_search else []
 
@@ -70,47 +71,58 @@ def generate_lesson_plan_interface(
         3. **Ход занятия**. Разбей занятие на логически последовательные этапы.
         В каждый этап встрой конкретные упражнения с достаточным количеством примеров.
         ВАЖНО: если разрешен web search: True, то выстрой занятие на базе упражнений из релевантных источников. 
-        Обязательно приведи ссылки на источники источники в текст ответа).
+        Обязательно приведи ссылки на источники в текст ответа.
         5. **Домашнее задание** (только если параметр "наличие домашнего задания: True")
         6. **Рекомендации по особым условиям** (если указан параметр "Особые условия")
         """
 
-#    tools = []
-#    tool_choice = None
+    tools = []
+    tool_choice = None
 
-#    if params['разрешен_web_search']:
-#        tools.append({
-#            "type": "web_search_preview",
-#            "search_context_size": "medium",
-#            "user_location": {
-#                "type": "approximate",
-#                "country": "RU"
-#            }
-#        })
-#        tool_choice = {"type": "web_search_preview"}
+    if params['разрешен_web_search']:
+        tools.append({
+            "type": "web_search_preview",
+            "search_context_size": "medium",
+            "user_location": {
+                "type": "approximate",
+                "country": "RU"
+            }
+        })
+        tool_choice = {"type": "web_search_preview"}
 
-#    response = client.responses.create(
+    response = client.responses.create(
+        model="gpt-4o-mini",
+        input=prompt,
+        tools=tools if tools else None,
+        tool_choice=tool_choice,
+        max_output_tokens=2000,
+        stream=True
+    )
+    full_response = response.text
+#    try:
+#        for event in response:
+#            if event.type == 'response.output_text.delta':
+#                yield event.delta
+#            elif event.type == 'response.completed':
+#                break
+#    except Exception as e:
+#        yield f"Ошибка: {str(e)}"
+
+
+#    response = client.chat.completions.create(
 #        model="gpt-4o-mini",
-#        input=prompt,
-#        tools=tools if tools else None,
-#        tool_choice=tool_choice,
-#        max_output_tokens=2000,
-#        stream=True  # <-- Добавлено
+#        messages=[
+#            {"role": "system", "content": "Ты — эксперт в области логопедии."},
+#            {"role": "user", "content": prompt}
+#        ],
+#        max_tokens=2000,
+#        stream=True  # Включаем потоковый режим
 #    )
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "Ты — эксперт в области логопедии."},
-            {"role": "user", "content": prompt}
-        ],
-        max_tokens=2000,
-        stream=True  # Включаем потоковый режим
-    )
+#    for chunk in response:
+#        if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
+#            yield chunk.choices[0].delta.content
 
-    for chunk in response:
-        if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
-            yield chunk.choices[0].delta.content
 
 # Интерфейс Gradio
 with gr.Blocks() as demo:
@@ -133,6 +145,7 @@ with gr.Blocks() as demo:
                 label="Количество детей в группе", minimum=2, maximum=10, value=2, step=1, visible=False
             )
 
+
             def toggle_group_slider(selected_format):
                 return gr.update(visible=(selected_format == "Групповое"))
 
@@ -148,7 +161,7 @@ with gr.Blocks() as demo:
             дз = gr.Checkbox(label="Домашнее задание")
             # Выделенный блок для профессиональных ресурсов
             gr.Markdown("---")  # Горизонтальная разделительная линия
-            #gr.Markdown("### 🔍 Дополнительные ресурсы", elem_classes=["block-title", "pro-title"])
+            # gr.Markdown("### 🔍 Дополнительные ресурсы", elem_classes=["block-title", "pro-title"])
 
             with gr.Row(variant="panel"):  # Вариант "panel" добавляет фоновый оттенок
                 web = gr.Checkbox(
@@ -188,6 +201,7 @@ with gr.Blocks() as demo:
         инвентарь, дз, web, web_sources
     ]
 
+
     # Функция для генерации docx файла
     def generate_docx(text: str):
         doc = Document()
@@ -199,60 +213,83 @@ with gr.Blocks() as demo:
         return file_path
 
 
-    def on_submit_with_spinner(*args):
+#    def on_submit_with_spinner(*args):
         # Проверка обязательных полей (остается без изменений)
+#        if not args[0] or not args[1] or not args[5]:
+#            yield (
+#                *[gr.update(interactive=True) for _ in all_inputs],
+#                gr.update(value="❗Заполните обязательные поля: нарушение, возраст, цель занятия"),
+#                gr.update(visible=False)
+#            )
+#            return
+
+        # Блокируем интерфейс
+#        yield (
+#            *[gr.update(interactive=False) for _ in all_inputs],
+#            gr.update(value="⏳ Конспект создается..."),
+#            gr.update(visible=False)
+#        )
+
+#        full_response = []
+#        try:
+#            for chunk in generate_lesson_plan_interface(*args):
+#                full_response.append(chunk)
+#                yield (
+#                    *[gr.update(interactive=False) for _ in all_inputs],
+#                    gr.update(value="".join(full_response)),
+#                    gr.update(visible=False)
+#                )
+
+            # После завершения стрима
+#           file_path = generate_docx("".join(full_response))
+#            yield (
+#                *[gr.update(interactive=True) for _ in all_inputs],
+#                gr.update(value="".join(full_response)),
+#                gr.update(visible=True, value=file_path)
+#            )
+
+#        except Exception as e:
+#            yield (
+#                *[gr.update(interactive=True) for _ in all_inputs],
+#                gr.update(value=f"❌ Ошибка: {str(e)}"),
+#                gr.update(visible=False)
+#            )
+
+    def on_submit_with_spinner(*args):
         if not args[0] or not args[1] or not args[5]:
-            yield (
+            return (
                 *[gr.update(interactive=True) for _ in all_inputs],
                 gr.update(value="❗Заполните обязательные поля: нарушение, возраст, цель занятия"),
                 gr.update(visible=False)
             )
-            return
 
         # Блокируем интерфейс
-        yield (
-            *[gr.update(interactive=False) for _ in all_inputs],
-            gr.update(value="⏳ Конспект создается..."),
-            gr.update(visible=False)
-        )
-
-        full_response = []
         try:
-            for chunk in generate_lesson_plan_interface(*args):
-                full_response.append(chunk)
-                yield (
-                    *[gr.update(interactive=False) for _ in all_inputs],
-                    gr.update(value="".join(full_response)),
-                    gr.update(visible=False)
-                )
-
-            # После завершения стрима
-            file_path = generate_docx("".join(full_response))
-            yield (
+            response_text = generate_lesson_plan_interface(*args)
+            file_path = generate_docx(response_text)
+            return (
                 *[gr.update(interactive=True) for _ in all_inputs],
-                gr.update(value="".join(full_response)),
+                gr.update(value=response_text),
                 gr.update(visible=True, value=file_path)
             )
 
         except Exception as e:
-            yield (
+            return (
                 *[gr.update(interactive=True) for _ in all_inputs],
                 gr.update(value=f"❌ Ошибка: {str(e)}"),
                 gr.update(visible=False)
             )
-
     # Привязываем обработчики
     btn.click(
         fn=on_submit_with_spinner,
         inputs=all_inputs,
-        outputs=[*all_inputs, output, download_btn]
-    ).then(
-        # Этот then нужен для корректного завершения стриминга
-        lambda: None,
-        inputs=[],
-        outputs=[]
-    )
-
+        outputs=[*all_inputs, output, download_btn])
+#    ).then(
+#        # Этот then нужен для корректного завершения стриминга
+#        lambda: None,
+#        inputs=[],
+#        outputs=[]
+#    )
 
 if __name__ == "__main__":
     demo.launch(share=True)

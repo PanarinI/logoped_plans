@@ -70,7 +70,7 @@ def generate_lesson_plan_interface(
         3. **Ход занятия**. Разбей занятие на логически последовательные этапы.
         В каждый этап встрой конкретные упражнения с достаточным количеством примеров.
         ВАЖНО: если разрешен web search: True, то выстрой занятие на базе упражнений из релевантных источников. 
-        Обязательно приведи ссылки на источники источники в текст ответа).
+        Обязательно приведи ссылки на источники в текст ответа.
         5. **Домашнее задание** (только если параметр "наличие домашнего задания: True")
         6. **Рекомендации по особым условиям** (если указан параметр "Особые условия")
         """
@@ -98,6 +98,15 @@ def generate_lesson_plan_interface(
         stream=True
     )
 
+    try:
+        for event in response:
+            if event.type == 'response.output_text.delta':
+                yield event.delta
+            elif event.type == 'response.completed':
+                break
+    except Exception as e:
+        yield f"Ошибка: {str(e)}"
+
 #    response = client.chat.completions.create(
 #        model="gpt-4o-mini",
 #        messages=[
@@ -108,14 +117,10 @@ def generate_lesson_plan_interface(
 #        stream=True  # Включаем потоковый режим
 #    )
 
-    try:
-        for event in response:
-            if event.type == 'response.output_text.delta':
-                yield event.delta
-            elif event.type == 'response.completed':
-                break
-    except Exception as e:
-        yield f"Ошибка: {str(e)}"
+#    for chunk in response:
+#        if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
+#            yield chunk.choices[0].delta.content
+
 
 # Интерфейс Gradio
 with gr.Blocks() as demo:
