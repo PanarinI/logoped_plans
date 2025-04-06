@@ -117,20 +117,45 @@ def generate_lesson_plan_interface(
 #    return response.output_text
 
 ####### СТРИМИНГ
+    full_text = ""
+    sources = []
+
     try:
         for event in response:
+            # Обрабатываем текстовые дельты (если есть)
             if event.type == 'response.output_text.delta':
-                yield event.delta
+                full_text += event.delta
 
+            # Ловим завершенное сообщение с данными
+            elif event.type == 'message' and getattr(event, 'status', None) == 'completed':
+                for content_item in getattr(event, 'content', []):
+                    if getattr(content_item, 'type', None) == 'output_text':
+                        # Получаем полный текст
+                        full_text = getattr(content_item, 'text', '')
+
+                        # Собираем источники
+                        for annotation in getattr(content_item, 'annotations', []):
+                            if getattr(annotation, 'type', None) == 'url_citation':
+                                sources.append(
+                                    f"🔗 {getattr(annotation, 'title', 'Без названия')}: "
+                                    f"{getattr(annotation, 'url', 'URL не указан')}"
+                                )
+
+            # Логируем веб-поиск (по желанию)
             elif event.type == 'web_search_call':
-                # Логируем
-                logging.info("\n=== WEB SEARCH CALL ===")
-                logging.info(f"ID: {event.id}")
-                logging.info(f"Status: {event.status}")
-                logging.info("=======================\n")
+                logging.info(f"[Поиск] ID: {event.id}, Status: {event.status}")
+
+        # Выводим результат
+        logging.info("\n" + "=" * 50 + " РЕЗУЛЬТАТ " + "=" * 50)
+        logging.info(full_text)
+
+        if sources:
+            logging.info("\n" + "=" * 45 + " ИСПОЛЬЗОВАННЫЕ ИСТОЧНИКИ " + "=" * 45)
+            for i, source in enumerate(sources, 1):
+                logging.info(f"{i}. {source}")
 
     except Exception as e:
-        yield f"Ошибка: {str(e)}"
+        logging.info(f"\n⚠️ Ошибка: {str(e)}")
 
 
 ############# COMPLETIONS (РАБОТАЕТ БЕЗ TOOLS)
