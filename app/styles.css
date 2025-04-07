@@ -26,15 +26,15 @@
 
 
 /* .left-col {  */
-  background-color: #CDE8FA; /* более тёмный голубой */
-  padding: 20px;
+/*   background-color: #CDE8FA; /* более тёмный голубой */
+/*   padding: 20px; */
   /* Можно и цвет текста подкорректировать */
-  color: #003366;
-}
+/*   color: #003366; */
+/*  } */
 
 .right-col {
   background-color: #F0FAFF; /* посветлее */
-  padding: 20px;
+  padding: 0px;
   color: #fef3c7;
 }
 
@@ -42,7 +42,7 @@
 #plan-output {
   border: 2px dashed #bbb;
   border-radius: 12px;
-  background-color: #ffffff;
+  background-color: ##f5f5f5;
   padding: 20px;
   min-height: 1100px;
   font-style: italic;
