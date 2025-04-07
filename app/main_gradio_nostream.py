@@ -166,10 +166,13 @@ def generate_lesson_plan_interface(
 #        if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
 #            yield chunk.choices[0].delta.content
 
+current_dir = os.path.dirname(__file__)
+css_path = os.path.join(current_dir, "styles.css")
 
 # Интерфейс Gradio
-with gr.Blocks(css="app/styles.css") as demo:
+with gr.Blocks(css=css_path) as demo:
     gr.Markdown("## 🧠 Генератор логопедических занятий")
+    gr.HTML("<style>body { background-color: pink !important; }</style>")
 
     with gr.Row():
         # Первый блок настройки (Ребенок)
