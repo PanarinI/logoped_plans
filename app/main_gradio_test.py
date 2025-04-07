@@ -7,8 +7,10 @@ from datetime import datetime
 import calendar
 from docx import Document
 import tempfile
-import random  # для случайного выбора цитаты
+
+import random
 from app.quotes import quotes
+from app.drawings import drawings
 import logging
 
 # Настройка логирования
@@ -167,7 +169,15 @@ def generate_lesson_plan_interface(
 #            yield chunk.choices[0].delta.content
 
 
+# Случайный рисунок в блокноте
+drawing = random.choice(drawings)
+# Текст с подсказкой и рисунком в блокноте
+hint_text = f"""Здесь появится план урока — укажите параметры и нажмите кнопку **Создать конспект**
 
+<pre>
+{drawing}
+</pre>
+"""
 ### css привязывать именно так
 css_path = os.path.join(os.path.dirname(__file__), "styles.css")
 theme='earneleh/paris'
@@ -187,21 +197,15 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
 
             gr.Markdown("### 📄 Занятие", elem_classes=["block-title"])
             формат = gr.Radio(["Индивидуальное", "Групповое"], label="Формат занятия", value="Индивидуальное")
-            количество_детей = gr.Slider(
-                label="Количество детей в группе", minimum=2, maximum=10, value=2, step=1, visible=False
-            )
+            количество_детей = gr.Slider(label="Количество детей в группе", minimum=2, maximum=10, value=2, step=1, visible=False)
             def toggle_group_slider(selected_format):
                 return gr.update(visible=(selected_format == "Групповое"))
-
-
             формат.change(fn=toggle_group_slider, inputs=формат, outputs=количество_детей)
 
             цель = gr.Textbox(label="Цель занятия*", placeholder="Пример: Автоматизация звука [Р] в слогах")
             тема = gr.Textbox(label="Тема", placeholder="Пример: Животные, Транспорт")
             длительность = gr.Slider(label="Длительность занятия (мин)", minimum=15, maximum=60, value=30, step=5)
-            инвентарь = gr.Textbox(label="Инвентарь (через запятую)",
-                                   placeholder="Пример: Зеркало, Карточки, Куклы")
-
+            инвентарь = gr.Textbox(label="Инвентарь (через запятую)", placeholder="Пример: Зеркало, Карточки, Куклы")
             дз = gr.Checkbox(label="Домашнее задание")
             # Выделенный блок для профессиональных ресурсов
             gr.Markdown("---")  # Разделительная линия
@@ -235,7 +239,7 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
             gr.Markdown("### План урока", elem_classes=["block-title"])
             # Один блок, который будет и рамкой, и местом для вывода, и с начальным текстом
             output = gr.Markdown(
-                "Здесь появится план урока — укажите параметры и нажмите кнопку **Создать конспект**",
+                hint_text,  # Передаем текст с рисунком в output
                 elem_id="plan-output"
             )
             download_btn = gr.DownloadButton(
