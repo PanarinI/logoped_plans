@@ -166,20 +166,22 @@ def generate_lesson_plan_interface(
 #        if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
 #            yield chunk.choices[0].delta.content
 
+
+
 ### css привязывать именно так
 css_path = os.path.join(os.path.dirname(__file__), "styles.css")
-
+theme='earneleh/paris'
+#
 # Интерфейс Gradio
-with gr.Blocks(css_paths=css_path) as demo:
+with gr.Blocks(theme=theme, css_paths=css_path) as demo:
     gr.Markdown("## Логопедический конспект", elem_classes=["main-title"])
     quote_box = gr.Markdown(random.choice(quotes), elem_classes=["quote-block"])
+
     with gr.Row():
         # Первый блок настройки (Ребенок)
         with gr.Column(elem_classes=["left-col"], scale=1):
-
             gr.Markdown("### 🧒 Ребёнок", elem_classes=["block-title"])
-            нарушение = gr.Textbox(label="Основное нарушение*",
-                                   placeholder="Пример: Дислалия (свистящие), ОНР II уровня")
+            нарушение = gr.Textbox(label="Основное нарушение*", placeholder="Пример: Дислалия (свистящие), ОНР II уровня")
             возраст = gr.Textbox(label="Возраст ребенка*", placeholder="Пример: 5 лет, 6-7 лет")
             особые_условия = gr.Textbox(label="Особые условия", placeholder="Пример: гиперактивность, РАС")
 
@@ -188,8 +190,6 @@ with gr.Blocks(css_paths=css_path) as demo:
             количество_детей = gr.Slider(
                 label="Количество детей в группе", minimum=2, maximum=10, value=2, step=1, visible=False
             )
-
-
             def toggle_group_slider(selected_format):
                 return gr.update(visible=(selected_format == "Групповое"))
 
@@ -204,7 +204,7 @@ with gr.Blocks(css_paths=css_path) as demo:
 
             дз = gr.Checkbox(label="Домашнее задание")
             # Выделенный блок для профессиональных ресурсов
-            gr.Markdown("---")  # Горизонтальная разделительная линия
+            gr.Markdown("---")  # Разделительная линия
             # gr.Markdown("### 🔍 Дополнительные ресурсы", elem_classes=["block-title", "pro-title"])
 
             with gr.Row(variant="panel"):  # Вариант "panel" добавляет фоновый оттенок
@@ -232,6 +232,11 @@ with gr.Blocks(css_paths=css_path) as demo:
 
         # Правая колонка — результат (output)
         with gr.Column(elem_classes=["right-col"], scale=2):  # Правая колонка — результат
+            gr.Markdown("### План урока", elem_classes=["block-title"])
+            output = gr.Markdown(
+                "Здесь появится план урока - укажите параметы и нажмите кнопку -- Создать конспект",
+                elem_id="plan-output"
+            )
             download_btn = gr.DownloadButton(
                 label="⬇️ Скачать .docx",
                 visible=False
