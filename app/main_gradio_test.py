@@ -62,7 +62,8 @@ def generate_lesson_plan_interface(
     }
 
     if формат_занятия == "Индивидуальное":
-        params["количество_детей"] = 1
+        количество_детей = 1  # Изменяем значение переменной
+        params["количество_детей"] = 1  # И обновляем словарь параметров
 
     # Формируем основной промпт
     base_prompt = f"""
@@ -179,12 +180,19 @@ hint_text = f"""Здесь появится план урока — укажит
 </pre>
 """
 ### css привязывать именно так
+
+#theme='earneleh/paris'
+theme = gr.themes.Base(
+    secondary_hue="rose",
+    neutral_hue="stone",
+).set(
+    body_background_fill='*primary_50'
+)
 css_path = os.path.join(os.path.dirname(__file__), "styles.css")
-theme='earneleh/paris'
 #
 # Интерфейс Gradio
 with gr.Blocks(theme=theme, css_paths=css_path) as demo:
-    gr.Markdown("## Логопедический конспект", elem_classes=["main-title"])
+    gr.Markdown("# Логопедический конспект", elem_classes=["main-title"])
     quote_box = gr.Markdown(random.choice(quotes), elem_classes=["quote-block"])
 
     with gr.Row():
@@ -199,7 +207,11 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
             формат = gr.Radio(["Индивидуальное", "Групповое"], label="Формат занятия", value="Индивидуальное")
             количество_детей = gr.Slider(label="Количество детей в группе", minimum=2, maximum=10, value=2, step=1, visible=False)
             def toggle_group_slider(selected_format):
-                return gr.update(visible=(selected_format == "Групповое"))
+                if selected_format == "Индивидуальное":
+                    return gr.update(visible=False, value=1)  # Скрыть слайдер и установить значение 1
+                else:
+                    return gr.update(visible=True, value=2)  # Показать слайдер и установить значение 2
+            # Привязываем изменение формата к функции
             формат.change(fn=toggle_group_slider, inputs=формат, outputs=количество_детей)
 
             цель = gr.Textbox(label="Цель занятия*", placeholder="Пример: Автоматизация звука [Р] в слогах")
