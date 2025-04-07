@@ -116,13 +116,23 @@ def generate_lesson_plan_interface(
     )
 ####### БЕЗ СТРИМИНГА
 
-    # Берём весь блок content из ответа
-    content_block = response.output[1].content[0]
-    #logging.info(f"=== ПОЛНЫЙ КОНТЕНТ БЛОКА ===")
-    #logging.info(f"Тип: {content_block.type}")
-    #logging.info(f"Текст: {content_block.text[:200]}...")  # Первые 200 символов текста
-    logging.info(f"Аннотации: {content_block.annotations}")
-    #logging.info(f"Сырые данные: {vars(content_block)}")  # Вся техническая информация
+    # Исправленная логика обработки ответа
+    try:
+        if params['разрешен_web_search']:
+            # При веб-поиске берем второй элемент (индекс 1)
+            content_block = response.output[1].content[0]
+        else:
+            # Без веб-поиска - первый элемент (индекс 0)
+            content_block = response.output[0].content[0]
+
+        # Извлекаем текст и аннотации
+        result_text = content_block.text
+        annotations = content_block.annotations
+        logging.info(f"Аннотации: {annotations}")
+
+    except (IndexError, AttributeError) as e:
+        logging.error(f"Ошибка обработки ответа: {str(e)}")
+        return "❌ Ошибка формирования ответа. Проверьте параметры запроса."
     return response.output_text
 
 
