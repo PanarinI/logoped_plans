@@ -166,18 +166,16 @@ def generate_lesson_plan_interface(
 #        if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
 #            yield chunk.choices[0].delta.content
 
-current_dir = os.path.dirname(__file__)
-css_path = os.path.join(current_dir, "styles.css")
+### css привязывать именно так
+css_path = os.path.join(os.path.dirname(__file__), "styles.css")
 
 # Интерфейс Gradio
 with gr.Blocks(css_paths=css_path) as demo:
-    gr.Markdown("## 🧠 Генератор логопедических занятий")
-    gr.HTML("<style>body { background-color: pink !important; }</style>")
-
+    gr.Markdown("## Логопедический конспект", elem_classes=["main-title"])
+    quote_box = gr.Markdown(random.choice(quotes), elem_classes=["quote-block"])
     with gr.Row():
         # Первый блок настройки (Ребенок)
-        with gr.Column(scale=1):
-            quote_box = gr.Markdown(random.choice(quotes), elem_classes=["quote-block"])
+        with gr.Column(elem_classes=["left-col"], scale=1):
 
             gr.Markdown("### 🧒 Ребёнок", elem_classes=["block-title"])
             нарушение = gr.Textbox(label="Основное нарушение*",
@@ -233,7 +231,7 @@ with gr.Blocks(css_paths=css_path) as demo:
             btn = gr.Button("Создать конспект", variant="primary")
 
         # Правая колонка — результат (output)
-        with gr.Column(scale=2):  # Правая колонка — результат
+        with gr.Column(elem_classes=["right-col"], scale=2):  # Правая колонка — результат
             download_btn = gr.DownloadButton(
                 label="⬇️ Скачать .docx",
                 visible=False
@@ -340,4 +338,4 @@ with gr.Blocks(css_paths=css_path) as demo:
     )
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(share=True)

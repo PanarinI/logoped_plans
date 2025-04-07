@@ -170,8 +170,8 @@ current_dir = os.path.dirname(__file__)
 css_path = os.path.join(current_dir, "styles.css")
 
 # Интерфейс Gradio
-with gr.Blocks(css=css_path) as demo:
-    gr.Markdown("## 🧠 Генератор логопедических занятий")
+with gr.Blocks(css_paths=css_path) as demo:
+    gr.Markdown("## Логопедический конспект", elem_classes=["main-title"])
     gr.HTML("<style>body { background-color: pink !important; }</style>")
 
     with gr.Row():

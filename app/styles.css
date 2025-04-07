@@ -1,14 +1,38 @@
-body {
-  background-color: lightgreen  !important;
+/* Основной фон */
+.gradio-container {
+    background-color: #fef3c7;
+}
+
+/* Заголовок */
+.main-title h2 {
+  text-align: center;
+  font-size: 2rem;      /* увеличить размер */
+  color: #003366;       /* более темный синий */
+  margin-bottom: 0.5em;
 }
 
 
-/* Стилизуем блок цитаты */
+/* Цитата */
 .quote-block {
+  text-align: center;
   font-style: italic;        /* курсив */
   background-color: #E0F5FF; /* светло-голубой фон, чтобы отделить цитату */
   padding: 10px;
   border-radius: 5px;
   margin-bottom: 20px;
 }
+
+.left-col {
+  background-color: #CDE8FA; /* более тёмный голубой */
+  padding: 20px;
+  /* Можно и цвет текста подкорректировать */
+  color: #003366;
+}
+
+.right-col {
+  background-color: #F0FAFF; /* посветлее */
+  padding: 20px;
+  color: #003366;
+}
+
 
