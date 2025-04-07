@@ -233,15 +233,18 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
         # Правая колонка — результат (output)
         with gr.Column(elem_classes=["right-col"], scale=2):  # Правая колонка — результат
             gr.Markdown("### План урока", elem_classes=["block-title"])
-            output = gr.Markdown(
-                "Здесь появится план урока - укажите параметы и нажмите кнопку -- Создать конспект",
-                elem_id="plan-output"
+            gr.Markdown(
+                "Здесь появится план урока - укажите параметры и нажмите кнопку — Создать конспект",
+                elem_classes=["plan-hint"]
             )
             download_btn = gr.DownloadButton(
                 label="⬇️ Скачать .docx",
                 visible=False
             )
-            output = gr.Markdown("")  # Поле для вывода конспекта
+            output = gr.Markdown(
+                "",
+                elem_id="plan-output"
+            )
 
     # Ввод параметров
     all_inputs = [
