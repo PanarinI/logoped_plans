@@ -125,19 +125,22 @@ def generate_lesson_plan_interface(
     )
 
 
-# АННОТАЦИИ В ЛОГ
-    if params['разрешен_web_search']:  # Только логируем аннотации при веб-поиске
-        try:
-            content_block = response.output[1].content[0]
-            # logging.info(f"=== ПОЛНЫЙ КОНТЕНТ БЛОКА ===")
-            # logging.info(f"Тип: {content_block.type}")
-            # logging.info(f"Текст: {content_block.text[:200]}...")  # Первые 200 символов текста
-            logging.info(f"Аннотации: {content_block.annotations}")
-            # logging.info(f"Сырые данные: {vars(content_block)}")  # Вся техническая информация
-        except (IndexError, AttributeError) as e:
-            logging.warning(f"Не удалось получить аннотации: {str(e)}")
+
 ####### БЕЗ СТРИМИНГА
 #    return response.output_text  # Основной вывод без изменений
+
+# АННОТАЦИИ В ЛОГ
+#    if params['разрешен_web_search']:  # Только логируем аннотации при веб-поиске
+#        try:
+#            content_block = response.output[1].content[0]
+#            # logging.info(f"=== ПОЛНЫЙ КОНТЕНТ БЛОКА ===")
+#            # logging.info(f"Тип: {content_block.type}")
+#            # logging.info(f"Текст: {content_block.text[:200]}...")  # Первые 200 символов текста
+#            logging.info(f"Аннотации: {content_block.annotations}")
+#            # logging.info(f"Сырые данные: {vars(content_block)}")  # Вся техническая информация
+#        except (IndexError, AttributeError) as e:
+#            logging.warning(f"Не удалось получить аннотации: {str(e)}")
+
 ####### СТРИМИНГ
     try:
         for event in response:
@@ -147,8 +150,6 @@ def generate_lesson_plan_interface(
                 break
     except Exception as e:
         yield f"Ошибка: {str(e)}"
-
-
 
 
 ############# COMPLETIONS (РАБОТАЕТ БЕЗ TOOLS)
