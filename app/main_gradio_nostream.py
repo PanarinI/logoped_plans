@@ -125,9 +125,8 @@ def generate_lesson_plan_interface(
     )
 
 
-
 ####### БЕЗ СТРИМИНГА
-#    return response.output_text  # Основной вывод без изменений
+    return response.output_text  # Основной вывод без изменений
 
 # АННОТАЦИИ В ЛОГ
 #    if params['разрешен_web_search']:  # Только логируем аннотации при веб-поиске
@@ -142,14 +141,14 @@ def generate_lesson_plan_interface(
 #            logging.warning(f"Не удалось получить аннотации: {str(e)}")
 
 ####### СТРИМИНГ
-    try:
-        for event in response:
-            if event.type == 'response.output_text.delta':
-                yield event.delta
-            elif event.type == 'response.completed':
-                break
-    except Exception as e:
-        yield f"Ошибка: {str(e)}"
+#    try:
+#        for event in response:
+#            if event.type == 'response.output_text.delta':
+#                yield event.delta
+#            elif event.type == 'response.completed':
+#                break
+#    except Exception as e:
+#        yield f"Ошибка: {str(e)}"
 
 
 ############# COMPLETIONS (РАБОТАЕТ БЕЗ TOOLS)
@@ -169,7 +168,7 @@ def generate_lesson_plan_interface(
 
 
 # Интерфейс Gradio
-with gr.Blocks() as demo:
+with gr.Blocks(css="app/styles.css") as demo:
     gr.Markdown("## 🧠 Генератор логопедических занятий")
 
     with gr.Row():

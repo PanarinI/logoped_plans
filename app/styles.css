@@ -1,41 +1,14 @@
-/* Стиль для кастомной подсказки */
-.pro-checkbox .wrap {
-  position: relative;
-  display: inline-block;
+body {
+  background-color: pink !important;
 }
 
-.pro-checkbox .wrap .label-wrap label:after {
-  content: "ⓘ";
-  color: #1976D2;
-  margin-left: 5px;
-  cursor: help;
-}
 
-.pro-checkbox .wrap .label-wrap:hover:after {
-  position: relative;
-}
-
-.pro-checkbox .wrap .label-wrap[data-tooltip]:hover:after {
-  content: attr(data-tooltip);
-  position: absolute;
-  background: white;
-  border: 1px solid #ddd;
-  padding: 8px;
-  border-radius: 4px;
-  width: 250px;
-  left: 0;
-  top: 25px;
-  z-index: 1000;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  font-size: 0.9em;
-  font-weight: normal;
-  color: #333;
-}
-
-/* тэглайн цитата */
+/* Стилизуем блок цитаты */
 .quote-block {
-    font-style: italic;
-    color: #555;
-    margin-bottom: 1em;
-    font-size: 0.95em;
+  font-style: italic;        /* курсив */
+  background-color: #E0F5FF; /* светло-голубой фон, чтобы отделить цитату */
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 20px;
 }
+
