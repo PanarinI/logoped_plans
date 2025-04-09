@@ -9,23 +9,38 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key=os.getenv("API_KEY_openai"))
 
 # ==== Управление этапами через флаги ====
-RUN_CREATE_VECTOR_STORE = True
+RUN_CREATE_VECTOR_STORE = False
 RUN_UPLOAD_FILES = False
-RUN_GENERATE_TEMPLATE = False
+RUN_GENERATE_TEMPLATE = True
 RUN_UPDATE_ATTRIBUTES = False
+RUN_DELETE_FILE = False
 
 # ==== Параметры ====
 VECTOR_STORE_NAME = "Logoped_KB"
-FILES_DIR = ".materials/vector_store"
-ATTRIBUTES_FILE = "attributes.json"
+FILES_DIR = "materials/vector_store"
+ATTRIBUTES_FILE = "attributes_template.json"
 VS_ID = os.getenv("VECTOR_STORE_ID")
+FILE_NAME_DELETE = ""
+
+
 
 # 1. Создание векторного хранилища
 def create_vector_store(name: str) -> str:
-    """Создает новое векторное хранилище и возвращает его ID"""
+    """Создает новое векторное хранилище, если его еще нет, и возвращает его ID"""
+
+    # Получаем список всех векторных хранилищ
+    existing_stores = client.vector_stores.list()
+
+    # Проверяем, существует ли хранилище с таким же именем
+    for store in existing_stores:
+        if store.name == name:
+            logger.info(f"Хранилище с именем '{name}' уже существует, его ID: {store.id}")
+            return store.id  # Возвращаем существующий ID хранилища
+
+    # Если хранилище не найдено, создаем новое
     vector_store = client.vector_stores.create(name=name)
     logger.info(f"Создано хранилище: {vector_store.id}")
     return vector_store.id
@@ -44,29 +59,32 @@ def upload_files(vector_store_id: str, files_dir: str):
         file_path = os.path.join(files_dir, filename)
         file_hash = calculate_hash(file_path)
 
+        # Если файл с таким именем и незменённым хэшем уже существует – пропускаем
         if filename in existing and existing[filename]['hash'] == file_hash:
             logger.info(f"Файл {filename} уже загружен, пропуск")
             continue
 
         try:
             with open(file_path, "rb") as f:
-                # Загрузка файла в OpenAI
+                # Загрузка файла в OpenAI (файл попадет в список "files")
                 uploaded_file = client.files.create(file=f, purpose="assistants")
 
-                # Добавление в векторное хранилище
-                client.vector_stores.files.create_and_poll(
-                    vector_store_id=vector_store_id,
-                    file_id=uploaded_file.id,
-                    attributes=existing[filename].get('attributes', {})
-                )
+            # Добавление файла в векторное хранилище с (пока пустыми) атрибутами
+            # (Если атрибуты вы укажете в update_attributes позже,
+            # здесь можно передать {} или заранее известные значения.)
+            client.vector_stores.files.create(
+                vector_store_id=vector_store_id,
+                file_id=uploaded_file.id,
+                attributes={}   # атрибуты можно обновить позже
+            )
 
-                # Сохраняем хеш для проверки изменений
-                existing[filename] = {
-                    'file_id': uploaded_file.id,
-                    'hash': file_hash,
-                    'attributes': {}
-                }
-                new_files.append(uploaded_file.id)
+            # Сохраняем сведения о файле локально
+            existing[filename] = {
+                'file_id': uploaded_file.id,
+                'hash': file_hash,
+                'attributes': {}   # и здесь храните текущие атрибуты
+            }
+            new_files.append(uploaded_file.id)
 
         except Exception as e:
             logger.error(f"Ошибка загрузки {filename}: {str(e)}")
@@ -156,6 +174,30 @@ def save_existing_files(data: dict):
         json.dump(data, f, indent=2)
 
 
+def delete_file_by_filename(filename: str):
+    """
+    Удаляет файл из OpenAI по имени (если он есть в existing_files.json)
+    """
+    existing = load_existing_files()
+    if filename not in existing:
+        print(f"Файл '{filename}' не найден в existing_files.json")
+        return
+
+    file_id = existing[filename]['file_id']
+    vector_store_id = VS_ID
+    try:
+        client.vector_stores.files.delete(
+            vector_store_id=vector_store_id,
+            file_id=file_id
+        )
+        print(f"Файл '{filename}' c ID {file_id} успешно удалён")
+
+        # Удаляем из локального кэша
+        del existing[filename]
+        save_existing_files(existing)
+    except Exception as e:
+        print(f"Ошибка при удалении файла '{file_id}': {str(e)}")
+
 if __name__ == "__main__":
 
     # ==== Запуск этапов ====
@@ -167,8 +209,11 @@ if __name__ == "__main__":
     else:
         new_files = []
 
-    if RUN_GENERATE_TEMPLATE and new_files:
+    if RUN_GENERATE_TEMPLATE:
         generate_attributes_template(VS_ID)
 
-    if RUN_UPDATE_attributes:
-        update_attributes(VS_ID, attributes_FILE)
+    if RUN_UPDATE_ATTRIBUTES:
+        update_attributes(VS_ID, ATTRIBUTES_FILE)
+
+    if RUN_DELETE_FILE:
+        delete_file_by_filename(FILE_NAME_DELETE)
