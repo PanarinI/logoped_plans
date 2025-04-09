@@ -1,0 +1,24 @@
+
+def delete_file_by_name(filename: str):
+    """
+    Удаляет файл из OpenAI по имени (если он есть в existing_files.json)
+    """
+    existing = load_existing_files()
+    if filename not in existing:
+        print(f"Файл '{filename}' не найден в existing_files.json")
+        return
+
+    file_id = existing[filename]['file_id']
+    vector_store_id = VS_ID
+    try:
+        client.vector_stores.files.delete(
+            vector_store_id=vector_store_id,
+            file_id=file_id
+        )
+        print(f"Файл '{filename}' (ID: {file_id}) успешно удалён")
+
+        # Удаляем из локального кэша
+        del existing[filename]
+        save_existing_files(existing)
+    except Exception as e:
+        print(f"Ошибка при удалении файла '{filename}': {str(e)}")
