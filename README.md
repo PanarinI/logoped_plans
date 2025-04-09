@@ -1,8 +1,20 @@
-# Logoped
-Ассистент логопеда по созданию планов занятий.
-Формирует методически-выверенный и релевантный план занятия на основе входных параметров от логопеда.
-Параметры сформированы по пожеланиям экспертов-логопедов.
+---
+title: KonspektLogoped
+emoji: 🚀
+colorFrom: blue
+colorTo: green
+sdk: gradio
+sdk_version: 5.23.3
+app_file: app/main_gradio_test.py
+pinned: false
+short_description: Помощник в создании логопедических конспектов
+---
 
 
-streamlit run app/main.py
-streamlit run app/main_completions.py
+CHECK
+CHECK 
+CHECK 
+CHECK 
+git add .
+git commit -m "..."
+git push space main
