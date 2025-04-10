@@ -126,7 +126,7 @@ def generate_lesson_plan_interface(
 #        tool_choice = {"type": "web_search_preview"}
 
     response = client.responses.create(
-        model="gpt-4o-mini",
+        model=os.getenv("MODEL"),
         input=full_prompt,
         temperature=0.7,
         tools=tools if tools else None,
