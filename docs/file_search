@@ -1,0 +1,352 @@
+RETRIEVAL
+https://platform.openai.com/docs/guides/retrieval?attributes-filter-example=filename&vector-store-operations=create&vector-store-batch-operations=update
+
+
+Attributes
+Each vector_store.file can have associated attributes, a dictionary of values that can be referenced when performing semantic search with attribute filtering.
+The dictionary can have at most 16 keys, with a limit of 256 characters each.
+
+Create vector store file with attributes
+client.vector_stores.files.create(
+    vector_store_id="vs_123",
+    file_id="file_123",
+    attributes={
+        "region": "US",
+        "category": "Marketing",
+        "date": 1672531200      # Jan 1, 2023
+    }
+)
+
+
+
+
+Chunking
+By default, max_chunk_size_tokens is set to 800 and chunk_overlap_tokens is set to 400, meaning every file is indexed by being split up into 800-token chunks,
+with 400-token overlap between consecutive chunks.
+
+You can adjust this by setting chunking_strategy when adding files to the vector store. There are certain limitations to chunking_strategy:
+
+max_chunk_size_tokens must be between 100 and 4096 inclusive.
+chunk_overlap_tokens must be non-negative and should not exceed max_chunk_size_tokens / 2.
+
+
+
+
+############ Vector store operations
+CREATE
+client.vector_stores.create(
+    name="Support FAQ",
+    file_ids=["file_123"]
+)
+
+UPDATE
+client.vector_stores.update(
+    vector_store_id="vs_123",
+    name="Support FAQ Updated"
+)
+
+
+############ Vector store file operations
+CREATE
+client.vector_stores.files.create_and_poll(
+    vector_store_id="vs_123",
+    file_id="file_123"
+)
+
+
+BATCH CREATE
+client.vector_stores.file_batches.create_and_poll(
+    vector_store_id="vs_123",
+    file_ids=["file_123", "file_456"]
+)
+
+UPDATE
+client.vector_stores.files.update(
+    vector_store_id="vs_123",
+    file_id="file_123",
+    attributes={"key": "value"}
+)
+LIST
+client.vector_stores.files.list(
+    vector_store_id="vs_123"
+)
+
+############# ATTRIBUTES
+Each vector_store.file can have associated attributes, a dictionary of values that can be referenced when performing semantic search with attribute filtering.
+The dictionary can have at most 16 keys, with a limit of 256 characters each.
+
+CREATE VS FILE WITH ATTRIBUTES
+client.vector_stores.files.create(
+    vector_store_id="vs_123",
+    file_id="file_123",
+    attributes={
+        "region": "US",
+        "category": "Marketing",
+        "date": 1672531200      # Jan 1, 2023
+    }
+)
+
+SEARCH QUERY
+user_query = "What is the return policy?"
+
+results = client.vector_stores.search(
+    vector_store_id=vector_store.id,
+    query=user_query,
+)
+
+
+FILE SEARCH TOOL
+from openai import OpenAI
+client = OpenAI()
+
+response = client.responses.create(
+    model="gpt-4o-mini",
+    input="What is deep research by OpenAI?",
+    tools=[{
+        "type": "file_search",
+        "vector_store_ids": ["<vector_store_id>"]
+    }]
+)
+print(response)
+
+RESPONSE
+{
+  "output": [
+    {
+      "type": "file_search_call",
+      "id": "fs_67c09ccea8c48191ade9367e3ba71515",
+      "status": "completed",
+      "queries": ["What is deep research?"],
+      "search_results": null
+    },
+    {
+      "id": "msg_67c09cd3091c819185af2be5d13d87de",
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "Deep research is a sophisticated capability that allows for extensive inquiry and synthesis of information across various domains. It is designed to conduct multi-step research tasks, gather data from multiple online sources, and provide comprehensive reports similar to what a research analyst would produce. This functionality is particularly useful in fields requiring detailed and accurate information...",
+          "annotations": [
+            {
+              "type": "file_citation",
+              "index": 992,
+              "file_id": "file-2dtbBZdjtDKS8eqWxqbgDi",
+              "filename": "deep_research_blog.pdf"
+            },
+            {
+              "type": "file_citation",
+              "index": 992,
+              "file_id": "file-2dtbBZdjtDKS8eqWxqbgDi",
+              "filename": "deep_research_blog.pdf"
+            },
+            {
+              "type": "file_citation",
+              "index": 1176,
+              "file_id": "file-2dtbBZdjtDKS8eqWxqbgDi",
+              "filename": "deep_research_blog.pdf"
+            },
+            {
+              "type": "file_citation",
+              "index": 1176,
+              "file_id": "file-2dtbBZdjtDKS8eqWxqbgDi",
+              "filename": "deep_research_blog.pdf"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+
+
+LIMIT RESULTS
+        "max_num_results": 2
+INCLUDE SEARCH RESULTS
+    include=["file_search_call.results"]
+
+
+METADATA FILTERING
+
+        "filters": {
+            "type": "eq",
+            "key": "type",
+            "value": "blog"
+        }
+
+
+
+
+
+
+
+
+
+Response(id='resp_67f6d96ee8408192a8849670feda558e0faa975217e529bc',
+created_at=1744230766.0, error=None, incomplete_details=None, instructions=None,
+metadata={}, model='gpt-4o-mini-2024-07-18', object='response', output=[ResponseFileSearchToolCall(id='fs_67f6d97084588192afdf4ebf9b3121cc0faa975217e529bc',
+queries=['упражнения для автоматизации звука Р', 'упражнения для звука Р', 'автоматизация звука Р'], status='completed', type='file_search_call', results=None),
+ ResponseOutputMessage(id='msg_67f6d97428f0819299ea4a771e639b3f0faa975217e529bc',
+ content=[ResponseOutputText(annotations=[AnnotationFileCitation(file_id='file-PiEcinbLiZwssqrka7N2P3',
+ index=315, type='file_citation', filename='Komarova_avtomatizatsia_zvuka_R.pdf'),
+ AnnotationFileCitation(file_id='file-QX2xWtyQLiCrU9rcMa9SAH', index=475, type='file_citation',
+ filename='Komarova_avtomatizatsia_zvuka_R-_1_.pdf'), AnnotationFileCitation(file_id='file-QX2xWtyQLiCrU9rcMa9SAH',
+  index=664, type='file_citation', filename='Komarova_avtomatizatsia_zvuka_R-_1_.pdf'),
+  AnnotationFileCitation(file_id='file-PiEcinbLiZwssqrka7N2P3', index=828, type='file_citation',
+   filename='Komarova_avtomatizatsia_zvuka_R.pdf'), AnnotationFileCitation(file_id='file-PiEcinbLiZwssqrka7N2P3',
+    index=828, type='file_citation', filename='Komarova_avtomatizatsia_zvuka_R.pdf'),
+    AnnotationFileCitation(file_id='file-JGY4tskUsk4fpd9vJN7dxr', index=1030, type='file_citation',
+    filename='Avtomatizatsia_zvuki_M_M_N_N.doc')], text='Вот несколько упражнений для автоматизации звука «Р»,
+    которые можно использовать с детьми в возрасте 4-7 лет:\n\n1. Лабиринт:\n   - Ребенок произносит звук «Р»,
+    называя картинки на странице, перемещая игрушку по лабиринту. Если слово произнесено неправильно, следующий ход
+    задерживается до правильного произношения.\n\n2. Лабиринт с проговариванием:\n   - При движении ребенку нужно не
+    только называть картинки, но и указывать направление хода (например, "пряники — вверх").\n\n3. Игры с игрушками:\n
+    - Используйте объемные или плоские игрушки, названия которых содержат звук «Р». Это помогает удерживать внимание
+    ребенка и делает занятия более увлекательными.\n\n4. Упражнения на слоги и слова:\n   - Включите слова и слоги,
+    содержащие звук «Р», в игру, где ребенок будет составлять слова из первых букв названий картинок.\n\n5. Чистоговорки
+    и скороговорки:\n   - Занимайтесь скороговорками, начиная с медленного произношения, затем постепенно увеличивайте
+    скорость, акцентируя внимание на правильном артикулировании звука.\n\nЭти упражнения помогут не только в автоматизации
+    звука «Р», но и в развитии мелкой моторики, фонематического слуха и навыков чтения.', type='output_text')], role='assistant',
+    status='completed', type='message')], parallel_tool_calls=True, temperature=1.0, tool_choice='auto',
+    tools=[FileSearchTool(type='file_search', vector_store_ids=['vs_67f69730803481918fb5049813e0bf7f'],
+    filters=None, max_num_results=20, ranking_options=RankingOptions(ranker='auto', score_threshold=0.0))],
+    top_p=1.0, max_output_tokens=None, previous_response_id=None, reasoning=Reasoning(effort=None, generate_summary=None),
+    status='completed', text=ResponseTextConfig(format=ResponseFormatText(type='text')), truncation='disabled',
+    usage=ResponseUsage(input_tokens=12398, input_tokens_details=InputTokensDetails(cached_tokens=0), output_tokens=389,
+    output_tokens_details=OutputTokensDetails(reasoning_tokens=0), total_tokens=12787), user=None, store=True)
+
+
+
+
+
+
+
+
+
+{
+  "id": "resp_67ccf4c55fc48190b71bd0463ad3306d09504fb6872380d7",
+  "object": "response",
+  "created_at": 1741485253,
+  "status": "completed",
+  "error": null,
+  "incomplete_details": null,
+  "instructions": null,
+  "max_output_tokens": null,
+  "model": "gpt-4o-2024-08-06",
+  "output": [
+    {
+      "type": "file_search_call",
+      "id": "fs_67ccf4c63cd08190887ef6464ba5681609504fb6872380d7",
+      "status": "completed",
+      "queries": [
+        "attributes of an ancient brown dragon"
+      ],
+      "results": null
+    },
+    {
+      "type": "message",
+      "id": "msg_67ccf4c93e5c81909d595b369351a9d309504fb6872380d7",
+      "status": "completed",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "The attributes of an ancient brown dragon include...",
+          "annotations": [
+            {
+              "type": "file_citation",
+              "index": 320,
+              "file_id": "file-4wDz5b167pAf72nx1h9eiN",
+              "filename": "dragons.pdf"
+            },
+            {
+              "type": "file_citation",
+              "index": 576,
+              "file_id": "file-4wDz5b167pAf72nx1h9eiN",
+              "filename": "dragons.pdf"
+            },
+            {
+              "type": "file_citation",
+              "index": 815,
+              "file_id": "file-4wDz5b167pAf72nx1h9eiN",
+              "filename": "dragons.pdf"
+            },
+            {
+              "type": "file_citation",
+              "index": 815,
+              "file_id": "file-4wDz5b167pAf72nx1h9eiN",
+              "filename": "dragons.pdf"
+            },
+            {
+              "type": "file_citation",
+              "index": 1030,
+              "file_id": "file-4wDz5b167pAf72nx1h9eiN",
+              "filename": "dragons.pdf"
+            },
+            {
+              "type": "file_citation",
+              "index": 1030,
+              "file_id": "file-4wDz5b167pAf72nx1h9eiN",
+              "filename": "dragons.pdf"
+            },
+            {
+              "type": "file_citation",
+              "index": 1156,
+              "file_id": "file-4wDz5b167pAf72nx1h9eiN",
+              "filename": "dragons.pdf"
+            },
+            {
+              "type": "file_citation",
+              "index": 1225,
+              "file_id": "file-4wDz5b167pAf72nx1h9eiN",
+              "filename": "dragons.pdf"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "parallel_tool_calls": true,
+  "previous_response_id": null,
+  "reasoning": {
+    "effort": null,
+    "generate_summary": null
+  },
+  "store": true,
+  "temperature": 1.0,
+  "text": {
+    "format": {
+      "type": "text"
+    }
+  },
+  "tool_choice": "auto",
+  "tools": [
+    {
+      "type": "file_search",
+      "filters": null,
+      "max_num_results": 20,
+      "ranking_options": {
+        "ranker": "auto",
+        "score_threshold": 0.0
+      },
+      "vector_store_ids": [
+        "vs_1234567890"
+      ]
+    }
+  ],
+  "top_p": 1.0,
+  "truncation": "disabled",
+  "usage": {
+    "input_tokens": 18307,
+    "input_tokens_details": {
+      "cached_tokens": 0
+    },
+    "output_tokens": 348,
+    "output_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "total_tokens": 18655
+  },
+  "user": null,
+  "metadata": {}
+}
