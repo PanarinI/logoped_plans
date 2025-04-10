@@ -5,6 +5,7 @@
 #bot/config.py
 .env
 materials/
+app/data/
 
 __pycache__/
 .idea/
