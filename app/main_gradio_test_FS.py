@@ -113,7 +113,7 @@ def generate_lesson_plan_interface(
     if params['разрешен_file_search']:
         tools.append({
             "type": "file_search",
-            "vector_store ids": [VS_ID],
+            "vector_store_ids": [VS_ID],
             "max_num_results": 5
         })
     #WEB SEARCH
