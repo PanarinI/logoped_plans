@@ -7,6 +7,8 @@ from datetime import datetime
 import calendar
 from docx import Document
 import tempfile
+import boto3
+from botocore.exceptions import ClientError
 
 import random
 from app.quotes import quotes
@@ -29,6 +31,24 @@ VS_ID = os.getenv("VECTOR_STORE_ID")
 # BASE_URL = os.getenv("BASE_URL")
 # client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
 
+# Добавляем функцию для генерации ссылок S3 (аналог из первого проекта)
+def generate_presigned_url(bucket_name, object_key, expiration=3600):
+    s3 = boto3.client(
+        's3',
+        endpoint_url='https://s3.timeweb.cloud',
+        aws_access_key_id=os.getenv('S3_ACCESS_KEY'),
+        aws_secret_access_key=os.getenv('S3_SECRET_KEY')
+    )
+    try:
+        url = s3.generate_presigned_url(
+            'get_object',
+            Params={'Bucket': bucket_name, 'Key': object_key},
+            ExpiresIn=expiration
+        )
+        return url
+    except ClientError as e:
+        logging.error(f"Ошибка генерации ссылки S3: {str(e)}")
+        return None
 
 # Функция генерации плана занятия
 def generate_lesson_plan_interface(
@@ -136,7 +156,59 @@ def generate_lesson_plan_interface(
 
 
 ####### БЕЗ СТРИМИНГА
-    return response.output_text  # Основной вывод без изменений
+#    return response.output_text  # Основной вывод без изменений
+
+    try:
+        full_text = response.output_text
+    except AttributeError:
+        full_text = "Не удалось получить текст ответа"
+
+    # 2. Получаем аннотации если есть
+    try:
+        annotations = response.output[1].content[0].annotations
+    except (AttributeError, IndexError):
+        annotations = []
+        logging.warning("Не найдены аннотации в ответе")
+
+    # 3. Если есть аннотации - обрабатываем их
+    if annotations:
+        # Получаем список файлов из S3 (аналог file_references из первого проекта)
+        s3 = boto3.client(
+            's3',
+            endpoint_url='https://s3.timeweb.cloud',
+            aws_access_key_id=os.getenv('S3_ACCESS_KEY'),
+            aws_secret_access_key=os.getenv('S3_SECRET_KEY')
+        )
+
+        bucket_name = os.getenv('S3_BUCKET_NAME')
+        prefix = "KB_Logopedia"  # Измените на ваш префикс
+
+        try:
+            response_s3 = s3.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
+            file_references = {
+                obj['Key'].split('/')[-1]: obj['Key']
+                for obj in response_s3.get('Contents', [])
+                if obj['Key'].endswith('.pdf')
+            }
+        except ClientError as e:
+            logging.error(f"Ошибка доступа к S3: {str(e)}")
+            file_references = {}
+
+        # Вставляем ссылки в текст (обратный порядок для сохранения позиций)
+        for ann in reversed(annotations):
+            filename = ann.filename
+            insert_pos = ann.index
+
+            if filename in file_references:
+                url = generate_presigned_url(
+                    bucket_name=bucket_name,
+                    object_key=file_references[filename]
+                )
+                if url:
+                    link_text = f" [📚 {filename}]({url})"
+                    full_text = f"{full_text[:insert_pos]}{link_text}{full_text[insert_pos:]}"
+            else:
+                logging.warning(f"Файл {filename} не найден в S3")
 
 # АННОТАЦИИ В ЛОГ
 #    if params['разрешен_web_search']:  # Только логируем аннотации при веб-поиске
