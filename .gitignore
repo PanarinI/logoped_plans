@@ -6,7 +6,7 @@
 .env
 materials/
 app/data/
-
+materials.7z
 __pycache__/
 .idea/
 .idea/workspace.xml
