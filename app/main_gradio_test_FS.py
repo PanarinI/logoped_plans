@@ -133,14 +133,14 @@ def generate_lesson_plan_interface(
         temperature=0.7,
         tools=tools if tools else None,
         tool_choice=tool_choice,
-        max_output_tokens=2000,
         include=["file_search_call.results"],
+        max_output_tokens=2000,
         stream=True
     )
 
 
 ####### БЕЗ СТРИМИНГА
-#    return response.output_text  # Основной вывод без изменений
+    return response.output_text  # Основной вывод без изменений
 
 # АННОТАЦИИ В ЛОГ
 #    if params['разрешен_web_search']:  # Только логируем аннотации при веб-поиске
@@ -155,14 +155,14 @@ def generate_lesson_plan_interface(
 #            logging.warning(f"Не удалось получить аннотации: {str(e)}")
 
 ####### СТРИМИНГ
-    try:
-        for event in response:
-            if event.type == 'response.output_text.delta':
-                yield event.delta
-            elif event.type == 'response.completed':
-                break
-    except Exception as e:
-        yield f"Ошибка: {str(e)}"
+#    try:
+#        for event in response:
+#            if event.type == 'response.output_text.delta':
+#                yield event.delta
+#            elif event.type == 'response.completed':
+#                break
+#    except Exception as e:
+#        yield f"Ошибка: {str(e)}"
 
 
 ############# COMPLETIONS (РАБОТАЕТ БЕЗ TOOLS)
@@ -305,85 +305,85 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
         return file_path
 
 ################### СТРИМИНГ
-    def on_submit_with_spinner(*args):
-        # Проверка обязательных полей (остается без изменений)
-        if not args[0] or not args[1] or not args[5]:
-            yield (
-                *[gr.update(interactive=True) for _ in all_inputs],
-                gr.update(value="❗Заполните обязательные поля: нарушение, возраст, цель занятия"),
-                gr.update(visible=False)
-            )
-            return
-
-        # Блокируем интерфейс
-        yield (
-            *[gr.update(interactive=False) for _ in all_inputs],
-            gr.update(value="⏳ Конспект создается..."),
-            gr.update(visible=False)
-        )
-
-        full_response = []
-        try:
-            for chunk in generate_lesson_plan_interface(*args):
-                full_response.append(chunk)
-                yield (
-                    *[gr.update(interactive=False) for _ in all_inputs],
-                    gr.update(value="".join(full_response)),
-                    gr.update(visible=False)
-                )
-
-            # После завершения стрима
-            file_path = generate_docx("".join(full_response))
-            yield (
-                *[gr.update(interactive=True) for _ in all_inputs],
-                gr.update(value="".join(full_response)),
-                gr.update(visible=True, value=file_path)
-            )
-
-        except Exception as e:
-            yield (
-                *[gr.update(interactive=True) for _ in all_inputs],
-                gr.update(value=f"❌ Ошибка: {str(e)}"),
-                gr.update(visible=False)
-            )
-
-################## БЕЗ СТРИМИНГА
 #    def on_submit_with_spinner(*args):
+#        # Проверка обязательных полей (остается без изменений)
 #        if not args[0] or not args[1] or not args[5]:
-#            return (
+#            yield (
 #                *[gr.update(interactive=True) for _ in all_inputs],
 #                gr.update(value="❗Заполните обязательные поля: нарушение, возраст, цель занятия"),
 #                gr.update(visible=False)
 #            )
+#            return
 
         # Блокируем интерфейс
+#        yield (
+#            *[gr.update(interactive=False) for _ in all_inputs],
+#            gr.update(value="⏳ Конспект создается..."),
+#            gr.update(visible=False)
+#        )
+
+#        full_response = []
 #        try:
-#            response_text = generate_lesson_plan_interface(*args)
-#            file_path = generate_docx(response_text)
-#            return (
+#            for chunk in generate_lesson_plan_interface(*args):
+#                full_response.append(chunk)
+#                yield (
+#                    *[gr.update(interactive=False) for _ in all_inputs],
+#                    gr.update(value="".join(full_response)),
+#                    gr.update(visible=False)
+#                )
+
+            # После завершения стрима
+#            file_path = generate_docx("".join(full_response))
+#            yield (
 #                *[gr.update(interactive=True) for _ in all_inputs],
-#                gr.update(value=response_text),
+#                gr.update(value="".join(full_response)),
 #                gr.update(visible=True, value=file_path)
 #            )
 
 #        except Exception as e:
-#            return (
+#            yield (
 #                *[gr.update(interactive=True) for _ in all_inputs],
 #                gr.update(value=f"❌ Ошибка: {str(e)}"),
 #                gr.update(visible=False)
 #            )
+
+################## БЕЗ СТРИМИНГА
+    def on_submit_with_spinner(*args):
+        if not args[0] or not args[1] or not args[5]:
+            return (
+                *[gr.update(interactive=True) for _ in all_inputs],
+                gr.update(value="❗Заполните обязательные поля: нарушение, возраст, цель занятия"),
+                gr.update(visible=False)
+            )
+
+        # Блокируем интерфейс
+        try:
+            response_text = generate_lesson_plan_interface(*args)
+            file_path = generate_docx(response_text)
+            return (
+                *[gr.update(interactive=True) for _ in all_inputs],
+                gr.update(value=response_text),
+                gr.update(visible=True, value=file_path)
+            )
+
+        except Exception as e:
+            return (
+                *[gr.update(interactive=True) for _ in all_inputs],
+                gr.update(value=f"❌ Ошибка: {str(e)}"),
+                gr.update(visible=False)
+            )
 
 
     # Привязываем обработчики
     btn.click(
         fn=on_submit_with_spinner,
         inputs=all_inputs,
-        outputs=[*all_inputs, output, download_btn] # <- скобку если не стримминг
-    ).then(
-        lambda: None,
-        inputs=[],
-        outputs=[]
-    )
+        outputs=[*all_inputs, output, download_btn]) # <- скобку если не стримминг
+#    ).then(
+#        lambda: None,
+#        inputs=[],
+#        outputs=[]
+#    )
 
 if __name__ == "__main__":
     demo.launch()
