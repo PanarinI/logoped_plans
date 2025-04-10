@@ -113,7 +113,7 @@ def generate_lesson_plan_interface(
     if params['разрешен_file_search']:
         tools.append({
             "type": "file_search",
-            "vector_store ids": [VS_ID],
+            "vector_store_ids": [VS_ID],
             "max_num_results": 5
         })
     #WEB SEARCH
@@ -126,7 +126,7 @@ def generate_lesson_plan_interface(
 #        tool_choice = {"type": "web_search_preview"}
 
     response = client.responses.create(
-        model="gpt-4o-mini",
+        model=os.getenv("MODEL"),
         input=full_prompt,
         temperature=0.7,
         tools=tools if tools else None,
@@ -247,7 +247,7 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
                 with gr.Row(variant="panel"):  # Вариант "panel" добавляет фоновый оттенок
                     file_search = gr.Checkbox(
                         label="📚 Поиск упражнений в логопедических базах",
-                        info="Упражнения подбираются из проверенных источников со ссылками",
+                        info="Упражнения подбираются из проверенных источников со ссылками (FS)",
                         interactive=True
                     )
 
