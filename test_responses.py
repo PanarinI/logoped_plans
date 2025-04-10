@@ -5,9 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-async def main():
-    # Инициализируем клиента с ключом API
-    client = openai.AsyncOpenAI(
+client = openai.AsyncOpenAI(
         api_key=os.getenv("API_KEY_openai"),
         timeout=60  # Устанавливаем время ожидания в 60 секунд
     )
