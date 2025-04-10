@@ -67,20 +67,16 @@ def generate_lesson_plan_interface(
 
     # Формируем основной промпт
     base_prompt = f"""
-    Ты — эксперт-логопед, разрабатывающий занятия для детей с речевыми нарушениями. 
     На основе параметров занятия составь план занятия, который должен включать:
     1. **Тема занятия, цель и задачи** (не более 3-х)
     2. **Необходимый инвентарь**
     3. **Ход занятия** – логически последовательные этапы с конкретными упражнениями и примерами"""
 
-
     file_search_section = ""
     if разрешен_file_search:
         file_search_section = """
         **
-        - Интегрируй релевантные упражнения в этапы занятия
         - При необходимости адаптируй упражнения по параметрам ребенка и занятия
-        - ОБЯЗАТЕЛЬНО приведи ссылки на источники из базы В ТЕКСТЕ ОТВЕТА!!!
         """
 
     # Продолжение базового промпта
@@ -103,7 +99,7 @@ def generate_lesson_plan_interface(
     - Четкая структура с нумерованными пунктами
     - Минимум общих фраз, максимум конкретики
     - Возрастосообразные примеры и материалы
-    -ОБЯЗАТЕЛЬНО укажи ссылки на источники В ТЕКСТЕ ОТВЕТА!!!
+    - При ответе обязательно указывай источники в формате [ИСТОЧНИК: filename.pdf]
 """
 
     # Собираем полный промпт
@@ -128,13 +124,14 @@ def generate_lesson_plan_interface(
 #        tool_choice = {"type": "web_search_preview"}
 
     response = client.responses.create(
-        model=os.getenv("MODEL"),
         input=full_prompt,
-        temperature=0.7,
+        instructions=os.getenv('INSTRUCTIONS'),
+        model=os.getenv("MODEL"),
         tools=tools if tools else None,
-        tool_choice=tool_choice,
+       #tool_choice=tool_choice,
         include=["file_search_call.results"],
         max_output_tokens=2000,
+        temperature=0.7,
         stream=False
     )
 
