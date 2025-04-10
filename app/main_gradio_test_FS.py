@@ -116,7 +116,7 @@ def generate_lesson_plan_interface(
         tools.append({
             "type": "file_search",
             "vector_store_ids": [VS_ID],
-            "max_num_results": 5
+            "max_num_results": 15
         })
     #WEB SEARCH
 #    if params['разрешен_web_search']:
