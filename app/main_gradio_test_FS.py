@@ -135,7 +135,7 @@ def generate_lesson_plan_interface(
         tool_choice=tool_choice,
         include=["file_search_call.results"],
         max_output_tokens=2000,
-        stream=True
+        stream=False
     )
 
 
