@@ -181,7 +181,7 @@ def generate_lesson_plan_interface(
         )
 
         bucket_name = os.getenv('S3_BUCKET_NAME')
-        prefix = "KB_Logopedia"  # Измените на ваш префикс
+        prefix = "KB_Logoped"  # Измените на ваш префикс
 
         try:
             response_s3 = s3.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
