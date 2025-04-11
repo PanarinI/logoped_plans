@@ -14,7 +14,7 @@ import logging
 
 from app.quotes import quotes
 from app.drawings import drawings
-
+import app.prompt
 # Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
@@ -47,6 +47,8 @@ def generate_presigned_url(bucket_name, object_key, expiration=3600):
     except ClientError as e:
         logging.error(f"Ошибка генерации ссылки S3: {str(e)}")
         return None
+
+
 
 # Функция генерации плана занятия
 def generate_lesson_plan_interface(
@@ -83,19 +85,7 @@ def generate_lesson_plan_interface(
         количество_детей = 1  # Принудительно для индивидуального занятия
         params["количество_детей"] = 1  # И обновляем словарь параметров
 
-    instructions = f"""
-        Ты — эксперт-логопед, разрабатывающий занятия для детей с речевыми нарушениями. 
-    
-    На основе указанных параметров занятия составь пошаговый план занятия.
-    План включает:
-    1. **Тему занятия, цель и задачи (не более 3-х)** (кратко)
-    2. **Необходимый инвентарь**
-    3. **Ход занятия** – основная часть плана. Логически последовательные этапы, насыщенный конкретными упражнениями с примерами
-    4. **Домашнее задание** (только если требуется)
-    5. **Рекомендации по особым условиям** (только если требуются)
-    
-    В ответ выводи только план, используй минимум общих фраз, максимум конкретики.
-"""
+    instructions = app.prompt.INSTRUCTIONS_2
 
     file_search_section = ""
     if разрешен_file_search:
