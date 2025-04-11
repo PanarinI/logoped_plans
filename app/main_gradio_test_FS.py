@@ -87,17 +87,16 @@ def generate_lesson_plan_interface(
 
     instructions = app.prompt.INSTRUCTIONS_2
 
-    file_search_section = ""
-    if разрешен_file_search:
-        file_search_section = """
-      Правила:
-    - План составь строго на основе упражнений из загруженных источников
+#    file_search_section = ""
+#    if разрешен_file_search:
+#        file_search_section = """
+#      Правила:
+#    - План составьте строго на основе упражнений из загруженных источников
+#    - Если подходящих упражнений в источниках нет - сообщи об этом и не создавай план
 
-    - Если подходящих упражнений в источниках нет - сообщи об этом и не создавай план
 
-
-    """
-    instructions = instructions + file_search_section
+#    """
+#    instructions = instructions + file_search_section
 
     prompt = f"""
     Параметры занятия:
