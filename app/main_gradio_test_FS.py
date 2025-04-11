@@ -85,7 +85,7 @@ def generate_lesson_plan_interface(
         количество_детей = 1  # Принудительно для индивидуального занятия
         params["количество_детей"] = 1  # И обновляем словарь параметров
 
-    instructions = app.prompt.INSTRUCTIONS_2
+    instructions = app.prompt.INSTRUCTIONS_3
 
 #    file_search_section = ""
 #    if разрешен_file_search:
