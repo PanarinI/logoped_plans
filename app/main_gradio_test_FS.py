@@ -146,7 +146,7 @@ def generate_lesson_plan_interface(
         input=prompt,
         model=os.getenv("MODEL"),
         tools=tools if tools else None,
-       #tool_choice=tool_choice,
+        tool_choice=tool_choice,
         include=["file_search_call.results"],
         max_output_tokens=2000,
         temperature=1,
