@@ -9,11 +9,11 @@ from docx import Document
 import tempfile
 import boto3
 from botocore.exceptions import ClientError
-
 import random
+import logging
+
 from app.quotes import quotes
 from app.drawings import drawings
-import logging
 
 # Настройка логирования
 logging.basicConfig(
@@ -27,11 +27,9 @@ load_dotenv()
 api_key = os.getenv("API_KEY_openai")
 client = OpenAI(api_key=api_key)
 VS_ID = os.getenv("VECTOR_STORE_ID")
-# API_KEY = os.getenv("API_KEY")
-# BASE_URL = os.getenv("BASE_URL")
-# client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
 
-# Добавляем функцию для генерации ссылок S3 (аналог из первого проекта)
+
+# Функция для генерации presigned URL для S3
 def generate_presigned_url(bucket_name, object_key, expiration=3600):
     s3 = boto3.client(
         's3',
@@ -82,7 +80,7 @@ def generate_lesson_plan_interface(
     }
 
     if формат_занятия == "Индивидуальное":
-        количество_детей = 1  # Изменяем значение переменной
+        количество_детей = 1  # Принудительно для индивидуального занятия
         params["количество_детей"] = 1  # И обновляем словарь параметров
 
     # Формируем основной промпт
@@ -177,7 +175,7 @@ def generate_lesson_plan_interface(
             's3',
             endpoint_url='https://s3.timeweb.cloud',
             aws_access_key_id=os.getenv('S3_ACCESS_KEY'),
-            aws_secret_access_key=os.getenv('S3_SECRET_KEY')
+            aws_secret_access_key=os.getenv('S3_SECRET_KEY'),
         )
 
         bucket_name = os.getenv('S3_BUCKET_NAME')
@@ -209,6 +207,8 @@ def generate_lesson_plan_interface(
                     full_text = f"{full_text[:insert_pos]}{link_text}{full_text[insert_pos:]}"
             else:
                 logging.warning(f"Файл {filename} не найден в S3")
+
+    return full_text
 
 # АННОТАЦИИ В ЛОГ
 #    if params['разрешен_web_search']:  # Только логируем аннотации при веб-поиске
