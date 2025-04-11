@@ -139,7 +139,7 @@ def generate_lesson_plan_interface(
         tools=tools if tools else None,
         tool_choice=tool_choice,
         include=["file_search_call.results"],
-        max_output_tokens=2000,
+        max_output_tokens=4000,
         temperature=float(os.getenv("TEMPERATURE", 1)),
         stream=False
     )
