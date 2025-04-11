@@ -102,8 +102,9 @@ def generate_lesson_plan_interface(
         file_search_section = """
       Правила:
     - План составь строго на основе упражнений из загруженных источников
+    - Адаптируй при необходимости упражнения под указанные параметры занятия и характеристики ребенка (нарушения, возраст)
     - Если подходящих упражнений в источниках нет - сообщи об этом и не создавай план
-    - Указывай названия разделов из источников, откуда берешь упражнения и материалы
+
 
     """
     instructions = instructions + file_search_section
@@ -148,7 +149,7 @@ def generate_lesson_plan_interface(
        #tool_choice=tool_choice,
         include=["file_search_call.results"],
         max_output_tokens=2000,
-        temperature=0.7,
+        temperature=1.5,
         stream=False
     )
 
