@@ -11,10 +11,6 @@ short_description: Помощник в создании логопедическ
 ---
 
 
-CHECK
-CHECK 
-CHECK 
-CHECK 
 git add .
 git commit -m "..."
 git push space main

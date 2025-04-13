@@ -15,6 +15,7 @@ import logging
 from app.quotes import quotes
 from app.drawings import drawings
 import app.prompt
+
 # Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
@@ -85,7 +86,7 @@ def generate_lesson_plan_interface(
         количество_детей = 1  # Принудительно для индивидуального занятия
         params["количество_детей"] = 1  # И обновляем словарь параметров
 
-    instructions = app.prompt.INSTRUCTIONS_3
+    # instructions =
 
 #    file_search_section = ""
 #    if разрешен_file_search:
@@ -105,9 +106,9 @@ def generate_lesson_plan_interface(
     - **Цель занятия:** {цель_занятия}
     - **Тема:** {тема or "не указано - определи самостоятельно"}
     - **Формат:** {формат_занятия} ({количество_детей} детей)
-    - **Инвентарь:** {инвентарь or "не указан - предложи варианты"}
+    - **Инвентарь:** {инвентарь or "не указан - на твое усмотрение"}
     - **Наличие домашнего задания:** {наличие_ДЗ or "не требуется"}
-    - **Особые условия:** {особые_условия or "не требуются"}
+    - **Индивидуальные особенности:** {особые_условия or "нет"}
     - **Длительность:** {длительность_занятия} минут
     - **Месяц года:** {текущий_месяц}
     """
@@ -119,7 +120,7 @@ def generate_lesson_plan_interface(
         tools.append({
             "type": "file_search",
             "vector_store_ids": [VS_ID],
-            "max_num_results": 15
+            "max_num_results": 20
         })
         tool_choice = {"type": "file_search"}
     #WEB SEARCH
@@ -132,14 +133,15 @@ def generate_lesson_plan_interface(
 #        tool_choice = {"type": "web_search_preview"}
 
     response = client.responses.create(
-        instructions=instructions,
+        instructions=app.prompt.INSTRUCTIONS_4,
         input=prompt,
-        model=os.getenv("MODEL"),
+        model="o3-mini", # gpt-4o-mini   o3-mini
         tools=tools if tools else None,
         tool_choice=tool_choice,
         include=["file_search_call.results"],
-        max_output_tokens=4000,
-        temperature=float(os.getenv("TEMPERATURE", 1)),
+        max_output_tokens=4096,
+        temperature=float(os.getenv("TEMPERATURE", 1))
+        ,reasoning= {"effort":"medium"},
         stream=False
     )
 
