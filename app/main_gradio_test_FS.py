@@ -271,8 +271,9 @@ theme = gr.themes.Base(
 css_path = os.path.join(os.path.dirname(__file__), "styles.css")
 
 # ИНТЕРФЕЙС
-advanced_settings_visible = gr.State(value=False) # Импортируем gr.State для хранения состояния
+
 with gr.Blocks(theme=theme, css_paths=css_path) as demo:
+    advanced_settings_visible = gr.State(value=False)  # Импортируем gr.State для хранения состояния
     gr.Markdown("# Логопедический конспект", elem_classes=["main-title"])
     quote_box = gr.Markdown(random.choice(quotes), elem_classes=["quote-block"])
 
