@@ -271,11 +271,7 @@ theme = gr.themes.Base(
 css_path = os.path.join(os.path.dirname(__file__), "styles.css")
 
 # ИНТЕРФЕЙС
-# Импортируем gr.State для хранения состояния
-advanced_settings_visible = gr.State(value=False)
-
-
-
+advanced_settings_visible = gr.State(value=False) # Импортируем gr.State для хранения состояния
 with gr.Blocks(theme=theme, css_paths=css_path) as demo:
     gr.Markdown("# Логопедический конспект", elem_classes=["main-title"])
     quote_box = gr.Markdown(random.choice(quotes), elem_classes=["quote-block"])
@@ -327,15 +323,15 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
                     уровень_применение = gr.Checkbox(label="Применение")
                     уровень_анализ = gr.Checkbox(label="Анализ")
                     уровень_творчество = gr.Checkbox(label="Творчество")
-                    def toggle_advanced_settings(visible):
-                        return gr.update(visible=not visible), not visible
 
-                    advanced_btn.click(
-                        fn=toggle_advanced_settings,
-                        inputs=[advanced_settings_visible],
-                        outputs=[advanced_block, advanced_settings_visible]
-                    )
+            def toggle_advanced_settings(visible):
+                return gr.update(visible=not visible), not visible
 
+            advanced_btn.click(
+                fn=toggle_advanced_settings,
+                inputs=[advanced_settings_visible],
+                outputs=[advanced_block, advanced_settings_visible]
+            )
                 with gr.Row(variant="panel"):  # Вариант "panel" добавляет фоновый оттенок
                     file_search = gr.Checkbox(
                         label="📚 Поиск упражнений в логопедических базах",
