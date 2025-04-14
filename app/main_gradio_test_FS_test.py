@@ -136,7 +136,7 @@ def generate_lesson_plan_interface(
 #        tool_choice = {"type": "web_search_preview"}
 
     response = client.responses.create(
-        instructions=app.prompt.INSTRUCTIONS_4,
+        instructions=app.prompt.INSTRUCTIONS_1,
         input=prompt,
         model="o3-mini", # gpt-4o-mini   o3-mini
         tools=tools if tools else None,
@@ -316,7 +316,7 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
                 gr.Markdown("### 🧒 Ребёнок", elem_classes=["block-title"])
                 нарушение = gr.Textbox(label="Основное нарушение*", placeholder="Пример: Дислалия (свистящие), ОНР II уровня")
                 возраст = gr.Textbox(label="Возраст ребенка*", placeholder="Пример: 5 лет, 6-7 лет")
-                особые_условия = gr.Textbox(label="Индивидуальные особенности", placeholder="Пример: гиперактивность, любит машинки")
+                особые_условия = gr.Textbox(label="Индивидуальные особенности", placeholder="Пример: Быстро устаёт, любит сказки")
 
 
             # Блок 2: Занятие (заголовок + поля)
@@ -345,11 +345,6 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
                 # Блок продвинутых настроек, изначально скрыт
                 with gr.Column(visible=False) as advanced_block:
                     gr.Markdown("#### ⚙️ Продвинутые настройки", elem_classes=["block-subtitle"])
-
-                    тема = gr.Textbox(label="Тема занятия", placeholder="Пример: Животные, Весна")
-                    особые_условия = gr.Textbox(label="Индивидуальные особенности",
-                                                placeholder="Пример: Быстро устаёт, любит сказки")
-
                     gr.Markdown("**💡 Уровни задач (таксономия):**")
                     уровень_повторение = gr.Checkbox(label="Повторение")
                     уровень_применение = gr.Checkbox(label="Применение")
