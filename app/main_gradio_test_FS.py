@@ -135,13 +135,13 @@ def generate_lesson_plan_interface(
     response = client.responses.create(
         instructions=app.prompt.INSTRUCTIONS_1,
         input=prompt,
-        model="o3-mini", # gpt-4o-mini   o3-mini
+        model="gpt-4o-mini", # gpt-4o-mini   o3-mini
         tools=tools if tools else None,
         tool_choice=tool_choice,
         include=["file_search_call.results"],
         max_output_tokens=4096,
-        #temperature=float(os.getenv("TEMPERATURE", 1))
-        reasoning= {"effort":"medium"},
+        #temperature=float(os.getenv("TEMPERATURE", 1)),
+        #reasoning= {"effort":"medium"},
         stream=False
     )
 
@@ -156,7 +156,7 @@ def generate_lesson_plan_interface(
 
     # 2. Получаем аннотации если есть
     try:
-        annotations = response.output[1].content[0].annotations
+        annotations = response.output[0].content[0].annotations
     except (AttributeError, IndexError):
         annotations = []
         logging.warning("Не найдены аннотации в ответе")
