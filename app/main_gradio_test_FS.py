@@ -156,7 +156,7 @@ def generate_lesson_plan_interface(
 
     # 2. Получаем аннотации если есть
     try:
-        annotations = response.output[0].content[0].annotations
+        annotations = response.output[1].content[0].annotations
     except (AttributeError, IndexError):
         annotations = []
         logging.warning("Не найдены аннотации в ответе")
