@@ -12,6 +12,8 @@ from botocore.exceptions import ClientError
 import random
 import logging
 
+from openai.types.responses import ResponseOutputMessage
+
 from app.quotes import quotes
 from app.drawings import drawings
 import app.prompt
@@ -157,6 +159,7 @@ def generate_lesson_plan_interface(
     except AttributeError:
         full_text = "Не удалось получить текст ответа"
 
+#### АННОТАЦИИ БЕЗ REASONING
     # 2. Получаем аннотации если есть
 #    try:
 #        annotations = response.output[1].content[0].annotations
@@ -164,31 +167,44 @@ def generate_lesson_plan_interface(
 #        annotations = []
 #        logging.warning("Не найдены аннотации в ответе")
 #
-#
-#     # 3. Если есть аннотации - обрабатываем их
-#     if annotations:
-#         # Получаем список файлов из S3 (аналог file_references из первого проекта)
-#         s3 = boto3.client(
-#             's3',
-#             endpoint_url='https://s3.timeweb.cloud',
-#             aws_access_key_id=os.getenv('S3_ACCESS_KEY'),
-#             aws_secret_access_key=os.getenv('S3_SECRET_KEY'),
-#         )
-#
-#         bucket_name = os.getenv('S3_BUCKET_NAME')
-#         prefix = "KB_Logoped"  # Измените на ваш префикс
-#
-#         try:
-#             response_s3 = s3.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
-#             file_references = {
-#                 obj['Key'].split('/')[-1]: obj['Key']
-#                 for obj in response_s3.get('Contents', [])
-#                 if obj['Key'].endswith('.pdf') or obj['Key'].endswith('.doc')
-#             }
-#         except ClientError as e:
-#             logging.error(f"Ошибка доступа к S3: {str(e)}")
-#             file_references = {}
-#
+#### АННОТАЦИИ С REASONING
+    try:
+        # Ищем сообщение ассистента с аннотациями в response.output
+        annotations = []
+        for item in response.output:
+            if isinstance(item, ResponseOutputMessage) and item.role == "assistant":
+                for content_item in item.content:
+                    if hasattr(content_item, 'annotations'):
+                        annotations.extend(content_item.annotations)
+                break  # Прерываем после первого найденного сообщения
+    except (AttributeError, IndexError, TypeError) as e:
+        annotations = []
+        logging.warning(f"Ошибка извлечения аннотаций: {str(e)}")
+
+    # 3. Если есть аннотации - обрабатываем их
+    if annotations:
+        # Получаем список файлов из S3 (аналог file_references из первого проекта)
+        s3 = boto3.client(
+            's3',
+            endpoint_url='https://s3.timeweb.cloud',
+            aws_access_key_id=os.getenv('S3_ACCESS_KEY'),
+            aws_secret_access_key=os.getenv('S3_SECRET_KEY'),
+        )
+
+        bucket_name = os.getenv('S3_BUCKET_NAME')
+        prefix = "KB_Logoped"  # Измените на ваш префикс
+
+        try:
+            response_s3 = s3.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
+            file_references = {
+                obj['Key'].split('/')[-1]: obj['Key']
+                for obj in response_s3.get('Contents', [])
+                if obj['Key'].endswith('.pdf') or obj['Key'].endswith('.doc')
+            }
+        except ClientError as e:
+            logging.error(f"Ошибка доступа к S3: {str(e)}")
+            file_references = {}
+# БЕЗ REASONING
 #         # Вставляем ссылки в текст (обратный порядок для сохранения позиций)
 #         for ann in reversed(annotations):
 #             filename = ann.filename
@@ -205,8 +221,19 @@ def generate_lesson_plan_interface(
 #             else:
 #                 logging.warning(f"Файл {filename} не найден в S3")
 #
-#
-#
+        for ann in reversed(sorted(annotations, key=lambda x: x.index)):
+            filename = ann.filename
+            insert_pos = ann.index
+
+            if filename in file_references:
+                url = generate_presigned_url(
+                    bucket_name=bucket_name,
+                    object_key=file_references[filename]
+                )
+                if url:
+                    link_text = f" [📚 {filename}]({url})"
+                    full_text = f"{full_text[:insert_pos]}{link_text}{full_text[insert_pos:]}"
+
 #     # АННОТАЦИИ В ЛОГ
 #     if annotations:
 #         try:
