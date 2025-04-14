@@ -324,14 +324,7 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
                     уровень_анализ = gr.Checkbox(label="Анализ")
                     уровень_творчество = gr.Checkbox(label="Творчество")
 
-            def toggle_advanced_settings(visible):
-                return gr.update(visible=not visible), not visible
 
-            advanced_btn.click(
-                fn=toggle_advanced_settings,
-                inputs=[advanced_settings_visible],
-                outputs=[advanced_block, advanced_settings_visible]
-            )
                 with gr.Row(variant="panel"):  # Вариант "panel" добавляет фоновый оттенок
                     file_search = gr.Checkbox(
                         label="📚 Поиск упражнений в логопедических базах",
@@ -378,6 +371,9 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
         инвентарь, дз, file_search #web_sources
     ]
 
+    # раскрытие допнастроек
+    def toggle_advanced_settings(visible):
+        return gr.update(visible=not visible), not visible
 
     # Функция для генерации docx файла
     def generate_docx(text: str):
@@ -470,5 +466,11 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
 #        outputs=[]
 #    )
 
+
+advanced_btn.click(
+    fn=toggle_advanced_settings,
+    inputs=[advanced_settings_visible],
+    outputs=[advanced_block, advanced_settings_visible]
+)
 if __name__ == "__main__":
     demo.launch()
