@@ -134,15 +134,15 @@ def generate_lesson_plan_interface(
 #        tool_choice = {"type": "web_search_preview"}
 
     response = client.responses.create(
-        instructions=app.prompt.INSTRUCTIONS_4,
+        instructions=app.prompt.INSTRUCTIONS_1,
         input=prompt,
-        model="gpt-4o-mini", # gpt-4o-mini   o3-mini
+        model="o3-mini", # gpt-4o-mini   o3-mini
         tools=tools if tools else None,
         tool_choice=tool_choice,
         include=["file_search_call.results"],
         max_output_tokens=8192,
         #temperature=float(os.getenv("TEMPERATURE", 1)),
-        #reasoning= {"effort":"medium"},
+        reasoning= {"effort":"medium"},
         stream=False
     )
 
