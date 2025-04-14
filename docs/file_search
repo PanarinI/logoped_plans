@@ -366,8 +366,20 @@ file_id='file-NinbkUHtjmjon5KJ1fMbz2', filename='Komarova_avtomatizatsia_zvuka_T
                       аменяться на ль. \n\nВ 4—5
 
 
-
-
+##СТРУКТУРА REASONING
+[
+    ResponseReasoningItem(...),  # Без аннотаций
+    ResponseFileSearchToolCall(...),  # Без аннотаций
+    ResponseOutputMessage(  # Единственный элемент с аннотациями
+        role="assistant",
+        content=[
+            ResponseOutputText(  # Только ОДИН блок — текст с аннотациями
+                annotations=[...],
+                text="Предлагаю следующие три индивидуальных упражнения..."
+            )
+        ]
+    )
+]
 
 
 {
