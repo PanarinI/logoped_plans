@@ -150,56 +150,79 @@ def generate_lesson_plan_interface(
 #    return response.output_text  # Основной вывод без изменений
 
     try:
-        full_text = response.output_text
-    except AttributeError:
+        # 1. Получаем основной текст ответа
+        full_text = response.output[0].content[0].text
+    except (AttributeError, IndexError) as e:
         full_text = "Не удалось получить текст ответа"
+        logging.error(f"Ошибка при получении текста ответа: {str(e)}")
+        return full_text
 
     # 2. Получаем аннотации если есть
     try:
-        annotations = response.output[0].content[0].annotations
-    except (AttributeError, IndexError):
+        annotations = [
+            ann for ann in response.output[0].content[0].annotations
+            if ann.type == "file_citation"
+        ]
+        logging.debug(f"Найдено аннотаций: {len(annotations)}")
+    except (AttributeError, IndexError) as e:
         annotations = []
-        logging.warning("Не найдены аннотации в ответе")
+        logging.warning(f"Не найдены аннотации в ответе: {str(e)}")
 
     # 3. Если есть аннотации - обрабатываем их
     if annotations:
-        # Получаем список файлов из S3 (аналог file_references из первого проекта)
-        s3 = boto3.client(
-            's3',
-            endpoint_url='https://s3.timeweb.cloud',
-            aws_access_key_id=os.getenv('S3_ACCESS_KEY'),
-            aws_secret_access_key=os.getenv('S3_SECRET_KEY'),
-        )
-
-        bucket_name = os.getenv('S3_BUCKET_NAME')
-        prefix = "KB_Logoped"  # Измените на ваш префикс
-
+        # Инициализация S3 клиента
         try:
+            s3 = boto3.client(
+                's3',
+                endpoint_url='https://s3.timeweb.cloud',
+                aws_access_key_id=os.getenv('S3_ACCESS_KEY'),
+                aws_secret_access_key=os.getenv('S3_SECRET_KEY'),
+            )
+
+            bucket_name = os.getenv('S3_BUCKET_NAME')
+            prefix = "KB_Logoped"
+
+            # Получаем список файлов из S3
             response_s3 = s3.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
             file_references = {
                 obj['Key'].split('/')[-1]: obj['Key']
                 for obj in response_s3.get('Contents', [])
-                if obj['Key'].endswith('.pdf') or obj['Key'].endswith('.docx')
+                if obj['Key'].endswith(('.pdf', '.docx'))
             }
         except ClientError as e:
             logging.error(f"Ошибка доступа к S3: {str(e)}")
             file_references = {}
+        except Exception as e:
+            logging.error(f"Неожиданная ошибка при работе с S3: {str(e)}")
+            file_references = {}
 
-        # Вставляем ссылки в текст (обратный порядок для сохранения позиций)
-        for ann in reversed(annotations):
-            filename = ann.filename
-            insert_pos = ann.index
+        # Сортируем аннотации по убыванию позиции для корректной вставки
+        sorted_annotations = sorted(annotations, key=lambda x: x.index, reverse=True)
 
-            if filename in file_references:
-                url = generate_presigned_url(
-                    bucket_name=bucket_name,
-                    object_key=file_references[filename]
-                )
-                if url:
-                    link_text = f" [📚 {filename}]({url})"
-                    full_text = f"{full_text[:insert_pos]}{link_text}{full_text[insert_pos:]}"
-            else:
-                logging.warning(f"Файл {filename} не найден в S3")
+        for ann in sorted_annotations:
+            try:
+                filename = ann.filename
+                insert_pos = ann.index
+
+                # Проверка корректности позиции
+                if insert_pos > len(full_text):
+                    logging.warning(f"Позиция аннотации {insert_pos} превышает длину текста")
+                    continue
+
+                if filename in file_references:
+                    url = generate_presigned_url(
+                        bucket_name=bucket_name,
+                        object_key=file_references[filename]
+                    )
+                    if url:
+                        # Форматируем ссылку (без пробела в начале)
+                        link_text = f"[📚 {filename}]({url})"
+                        full_text = f"{full_text[:insert_pos]}{link_text}{full_text[insert_pos:]}"
+                else:
+                    logging.warning(f"Файл {filename} не найден в S3")
+            except Exception as e:
+                logging.error(f"Ошибка обработки аннотации: {str(e)}")
+                continue
 
     return full_text
 
