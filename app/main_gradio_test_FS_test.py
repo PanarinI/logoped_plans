@@ -108,10 +108,11 @@ def generate_lesson_plan_interface(
     - **Формат:** {формат_занятия} ({количество_детей} детей) -- для подбора форм взаимодействия
     - **Инвентарь:** {инвентарь or "не указан - на твое усмотрение"}
     - **Наличие домашнего задания:** {наличие_ДЗ or "не требуется"}
-    - **Индивидуальные особенности:** {особые_условия or "нет"} -- 	Настройки по интересам, мотивации, особенностям внимания
+    - **Индивидуальные особенности:** {особые_условия or "нет"} -- для персонализации занятия
     - **Длительность:** {длительность_занятия} минут -- чтобы регулировать объём
-    - **Месяц года:** {текущий_месяц} -- 	тематическая окраска, привязка к сезону, легкий "атмосферный слой" для эмоционального контекста
+    - **Месяц года:** {текущий_месяц} -- тематическая окраска, привязка к сезону, легкий "атмосферный слой" для эмоционального контекста
     """
+
 
     tools = []
     tool_choice = None
@@ -135,13 +136,13 @@ def generate_lesson_plan_interface(
     response = client.responses.create(
         instructions=app.prompt.INSTRUCTIONS_1,
         input=prompt,
-        model="gpt-4o-mini", # gpt-4o-mini   o3-mini
+        model="o3-mini", # gpt-4o-mini   o3-mini
         tools=tools if tools else None,
         tool_choice=tool_choice,
         include=["file_search_call.results"],
-        max_output_tokens=4096,
+        max_output_tokens=8192,
         #temperature=float(os.getenv("TEMPERATURE", 1)),
-        #reasoning= {"effort":"medium"},
+        reasoning= {"effort":"medium"},
         stream=False
     )
 
@@ -150,72 +151,75 @@ def generate_lesson_plan_interface(
 #    return response.output_text  # Основной вывод без изменений
 
     try:
-        #full_text = response.output_text
-        full_text = response.output[1].content[0].text
+        full_text = response.output_text
+        logging.info(response.output)
+        #full_text = response.output[1].content[0].text
     except AttributeError:
         full_text = "Не удалось получить текст ответа"
 
     # 2. Получаем аннотации если есть
-    try:
-        annotations = response.output[1].content[0].annotations
-    except (AttributeError, IndexError):
-        annotations = []
-        logging.warning("Не найдены аннотации в ответе")
-
-    # 3. Если есть аннотации - обрабатываем их
-    if annotations:
-        # Получаем список файлов из S3 (аналог file_references из первого проекта)
-        s3 = boto3.client(
-            's3',
-            endpoint_url='https://s3.timeweb.cloud',
-            aws_access_key_id=os.getenv('S3_ACCESS_KEY'),
-            aws_secret_access_key=os.getenv('S3_SECRET_KEY'),
-        )
-
-        bucket_name = os.getenv('S3_BUCKET_NAME')
-        prefix = "KB_Logoped"  # Измените на ваш префикс
-
-        try:
-            response_s3 = s3.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
-            file_references = {
-                obj['Key'].split('/')[-1]: obj['Key']
-                for obj in response_s3.get('Contents', [])
-                if obj['Key'].endswith('.pdf') or obj['Key'].endswith('.docx')
-            }
-        except ClientError as e:
-            logging.error(f"Ошибка доступа к S3: {str(e)}")
-            file_references = {}
-
-        # Вставляем ссылки в текст (обратный порядок для сохранения позиций)
-        for ann in reversed(annotations):
-            filename = ann.filename
-            insert_pos = ann.index
-
-            if filename in file_references:
-                url = generate_presigned_url(
-                    bucket_name=bucket_name,
-                    object_key=file_references[filename]
-                )
-                if url:
-                    link_text = f" [📚 {filename}]({url})"
-                    full_text = f"{full_text[:insert_pos]}{link_text}{full_text[insert_pos:]}"
-            else:
-                logging.warning(f"Файл {filename} не найден в S3")
+#    try:
+#        annotations = response.output[1].content[0].annotations
+#    except (AttributeError, IndexError):
+#        annotations = []
+#        logging.warning("Не найдены аннотации в ответе")
+#
+#
+#     # 3. Если есть аннотации - обрабатываем их
+#     if annotations:
+#         # Получаем список файлов из S3 (аналог file_references из первого проекта)
+#         s3 = boto3.client(
+#             's3',
+#             endpoint_url='https://s3.timeweb.cloud',
+#             aws_access_key_id=os.getenv('S3_ACCESS_KEY'),
+#             aws_secret_access_key=os.getenv('S3_SECRET_KEY'),
+#         )
+#
+#         bucket_name = os.getenv('S3_BUCKET_NAME')
+#         prefix = "KB_Logoped"  # Измените на ваш префикс
+#
+#         try:
+#             response_s3 = s3.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
+#             file_references = {
+#                 obj['Key'].split('/')[-1]: obj['Key']
+#                 for obj in response_s3.get('Contents', [])
+#                 if obj['Key'].endswith('.pdf') or obj['Key'].endswith('.doc')
+#             }
+#         except ClientError as e:
+#             logging.error(f"Ошибка доступа к S3: {str(e)}")
+#             file_references = {}
+#
+#         # Вставляем ссылки в текст (обратный порядок для сохранения позиций)
+#         for ann in reversed(annotations):
+#             filename = ann.filename
+#             insert_pos = ann.index
+#
+#             if filename in file_references:
+#                 url = generate_presigned_url(
+#                     bucket_name=bucket_name,
+#                     object_key=file_references[filename]
+#                 )
+#                 if url:
+#                     link_text = f" [📚 {filename}]({url})"
+#                     full_text = f"{full_text[:insert_pos]}{link_text}{full_text[insert_pos:]}"
+#             else:
+#                 logging.warning(f"Файл {filename} не найден в S3")
+#
+#
+#
+#     # АННОТАЦИИ В ЛОГ
+#     if annotations:
+#         try:
+#             content_block = response.output[1].content[0]
+#             logging.info(f"=== ПОЛНЫЙ КОНТЕНТ БЛОКА ===")
+#             logging.info(f"Тип: {content_block.type}")
+#             logging.info(f"Текст: {content_block.text[:200]}...")  # Первые 200 символов текста
+#             logging.info(f"Аннотации: {content_block.annotations}")
+#             logging.info(f"Сырые данные: {vars(content_block)}")  # Вся техническая информация
+#         except (IndexError, AttributeError) as e:
+#             logging.warning(f"Не удалось получить аннотации: {str(e)}")
 
     return full_text
-
-# АННОТАЦИИ В ЛОГ
-#    if params['разрешен_web_search']:  # Только логируем аннотации при веб-поиске
-#        try:
-#            content_block = response.output[1].content[0]
-#            # logging.info(f"=== ПОЛНЫЙ КОНТЕНТ БЛОКА ===")
-#            # logging.info(f"Тип: {content_block.type}")
-#            # logging.info(f"Текст: {content_block.text[:200]}...")  # Первые 200 символов текста
-#            logging.info(f"Аннотации: {content_block.annotations}")
-#            # logging.info(f"Сырые данные: {vars(content_block)}")  # Вся техническая информация
-#        except (IndexError, AttributeError) as e:
-#            logging.warning(f"Не удалось получить аннотации: {str(e)}")
-
 ####### СТРИМИНГ
 #    try:
 #        for event in response:
@@ -271,7 +275,9 @@ theme = gr.themes.Base(
 css_path = os.path.join(os.path.dirname(__file__), "styles.css")
 
 # ИНТЕРФЕЙС
+
 with gr.Blocks(theme=theme, css_paths=css_path) as demo:
+    advanced_settings_visible = gr.State(value=False)  # Импортируем gr.State для хранения состояния
     gr.Markdown("# Логопедический конспект", elem_classes=["main-title"])
     quote_box = gr.Markdown(random.choice(quotes), elem_classes=["quote-block"])
 
@@ -283,8 +289,7 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
                 gr.Markdown("### 🧒 Ребёнок", elem_classes=["block-title"])
                 нарушение = gr.Textbox(label="Основное нарушение*", placeholder="Пример: Дислалия (свистящие), ОНР II уровня")
                 возраст = gr.Textbox(label="Возраст ребенка*", placeholder="Пример: 5 лет, 6-7 лет")
-                особые_условия = gr.Textbox(label="Особые условия", placeholder="Пример: гиперактивность, РАС")
-
+                особые_условия = gr.Textbox(label="Индивидуальные особенности", placeholder="Пример: гиперактивность, любит машинки")
 
 
             # Блок 2: Занятие (заголовок + поля)
@@ -307,7 +312,23 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
                 дз = gr.Checkbox(label="Домашнее задание")
                 # Выделенный блок для профессиональных ресурсов
                 gr.Markdown("---")  # Разделительная линия
-                # gr.Markdown("### 🔍 Дополнительные ресурсы", elem_classes=["block-title", "pro-title"])
+                                # gr.Markdown("### 🔍 Дополнительные ресурсы", elem_classes=["block-title", "pro-title"])
+                # ➕ Кнопка и блок продвинутых настроек:
+                advanced_btn = gr.Button(value="➕ Продвинутые настройки", size="sm")
+                # Блок продвинутых настроек, изначально скрыт
+                with gr.Column(visible=False) as advanced_block:
+                    gr.Markdown("#### ⚙️ Продвинутые настройки", elem_classes=["block-subtitle"])
+
+                    тема = gr.Textbox(label="Тема занятия", placeholder="Пример: Животные, Весна")
+                    особые_условия = gr.Textbox(label="Индивидуальные особенности",
+                                                placeholder="Пример: Быстро устаёт, любит сказки")
+
+                    gr.Markdown("**💡 Уровни задач (таксономия):**")
+                    уровень_повторение = gr.Checkbox(label="Повторение")
+                    уровень_применение = gr.Checkbox(label="Применение")
+                    уровень_анализ = gr.Checkbox(label="Анализ")
+                    уровень_творчество = gr.Checkbox(label="Творчество")
+
 
                 with gr.Row(variant="panel"):  # Вариант "panel" добавляет фоновый оттенок
                     file_search = gr.Checkbox(
@@ -355,6 +376,9 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
         инвентарь, дз, file_search #web_sources
     ]
 
+    # раскрытие допнастроек
+    def toggle_advanced_settings(visible):
+        return gr.update(visible=not visible), not visible
 
     # Функция для генерации docx файла
     def generate_docx(text: str):
@@ -447,5 +471,10 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
 #        outputs=[]
 #    )
 
+    advanced_btn.click(
+        fn=toggle_advanced_settings,
+        inputs=[advanced_settings_visible],
+        outputs=[advanced_block, advanced_settings_visible]
+    )
 if __name__ == "__main__":
     demo.launch()
