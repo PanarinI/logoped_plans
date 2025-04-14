@@ -152,7 +152,7 @@ def generate_lesson_plan_interface(
 
     try:
         full_text = response.output_text
-        logging.info(response)
+        logging.info(response.output)
         #full_text = response.output[1].content[0].text
     except AttributeError:
         full_text = "Не удалось получить текст ответа"
