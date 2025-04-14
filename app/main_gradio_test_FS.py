@@ -466,11 +466,10 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
 #        outputs=[]
 #    )
 
-
-advanced_btn.click(
-    fn=toggle_advanced_settings,
-    inputs=[advanced_settings_visible],
-    outputs=[advanced_block, advanced_settings_visible]
-)
+    advanced_btn.click(
+        fn=toggle_advanced_settings,
+        inputs=[advanced_settings_visible],
+        outputs=[advanced_block, advanced_settings_visible]
+    )
 if __name__ == "__main__":
     demo.launch()
