@@ -151,8 +151,8 @@ def generate_lesson_plan_interface(
 #    return response.output_text  # Основной вывод без изменений
 
     try:
-        #full_text = response.output_text
-        full_text = response.output[1].content[0].text
+        full_text = response.output_text
+        #full_text = response.output[1].content[0].text
     except AttributeError:
         full_text = "Не удалось получить текст ответа"
 
@@ -181,7 +181,7 @@ def generate_lesson_plan_interface(
             file_references = {
                 obj['Key'].split('/')[-1]: obj['Key']
                 for obj in response_s3.get('Contents', [])
-                if obj['Key'].endswith('.pdf') or obj['Key'].endswith('.docx')
+                if obj['Key'].endswith('.pdf') or obj['Key'].endswith('.doc')
             }
         except ClientError as e:
             logging.error(f"Ошибка доступа к S3: {str(e)}")
