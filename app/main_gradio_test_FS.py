@@ -202,20 +202,21 @@ def generate_lesson_plan_interface(
             else:
                 logging.warning(f"Файл {filename} не найден в S3")
 
+
+
+    # АННОТАЦИИ В ЛОГ
+    if annotations:
+        try:
+            content_block = response.output[1].content[0]
+            logging.info(f"=== ПОЛНЫЙ КОНТЕНТ БЛОКА ===")
+            logging.info(f"Тип: {content_block.type}")
+            logging.info(f"Текст: {content_block.text[:200]}...")  # Первые 200 символов текста
+            logging.info(f"Аннотации: {content_block.annotations}")
+            logging.info(f"Сырые данные: {vars(content_block)}")  # Вся техническая информация
+        except (IndexError, AttributeError) as e:
+            logging.warning(f"Не удалось получить аннотации: {str(e)}")
+
     return full_text
-
-# АННОТАЦИИ В ЛОГ
-#    if params['разрешен_web_search']:  # Только логируем аннотации при веб-поиске
-#        try:
-#            content_block = response.output[1].content[0]
-#            # logging.info(f"=== ПОЛНЫЙ КОНТЕНТ БЛОКА ===")
-#            # logging.info(f"Тип: {content_block.type}")
-#            # logging.info(f"Текст: {content_block.text[:200]}...")  # Первые 200 символов текста
-#            logging.info(f"Аннотации: {content_block.annotations}")
-#            # logging.info(f"Сырые данные: {vars(content_block)}")  # Вся техническая информация
-#        except (IndexError, AttributeError) as e:
-#            logging.warning(f"Не удалось получить аннотации: {str(e)}")
-
 ####### СТРИМИНГ
 #    try:
 #        for event in response:
