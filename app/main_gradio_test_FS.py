@@ -151,26 +151,36 @@ def generate_lesson_plan_interface(
 
     try:
         # 1. Получаем основной текст ответа
-        full_text = response.output[0].content[0].text
+        if hasattr(response, 'output_text'):
+            full_text = response.output_text
+        else:
+            # Альтернативный путь для новой структуры ответа
+            full_text = response.output[0].message.content if hasattr(response.output[0], 'message') else \
+            response.output[0].text
+
     except (AttributeError, IndexError) as e:
         full_text = "Не удалось получить текст ответа"
         logging.error(f"Ошибка при получении текста ответа: {str(e)}")
+        logging.debug(f"Полная структура ответа: {response}")
         return full_text
 
     # 2. Получаем аннотации если есть
+    annotations = []
     try:
-        annotations = [
-            ann for ann in response.output[0].content[0].annotations
-            if ann.type == "file_citation"
-        ]
+        if hasattr(response.output[0], 'message') and hasattr(response.output[0].message, 'annotations'):
+            annotations = response.output[0].message.annotations
+        elif hasattr(response.output[0], 'annotations'):
+            annotations = response.output[0].annotations
+
+        # Фильтруем только file_citation аннотации
+        annotations = [ann for ann in annotations if getattr(ann, 'type', None) == 'file_citation']
+
         logging.debug(f"Найдено аннотаций: {len(annotations)}")
     except (AttributeError, IndexError) as e:
-        annotations = []
         logging.warning(f"Не найдены аннотации в ответе: {str(e)}")
 
     # 3. Если есть аннотации - обрабатываем их
     if annotations:
-        # Инициализация S3 клиента
         try:
             s3 = boto3.client(
                 's3',
@@ -182,29 +192,24 @@ def generate_lesson_plan_interface(
             bucket_name = os.getenv('S3_BUCKET_NAME')
             prefix = "KB_Logoped"
 
-            # Получаем список файлов из S3
             response_s3 = s3.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
             file_references = {
                 obj['Key'].split('/')[-1]: obj['Key']
                 for obj in response_s3.get('Contents', [])
                 if obj['Key'].endswith(('.pdf', '.docx'))
             }
-        except ClientError as e:
-            logging.error(f"Ошибка доступа к S3: {str(e)}")
-            file_references = {}
         except Exception as e:
-            logging.error(f"Неожиданная ошибка при работе с S3: {str(e)}")
+            logging.error(f"Ошибка при работе с S3: {str(e)}")
             file_references = {}
 
-        # Сортируем аннотации по убыванию позиции для корректной вставки
-        sorted_annotations = sorted(annotations, key=lambda x: x.index, reverse=True)
+        # Сортируем аннотации по убыванию позиции
+        sorted_annotations = sorted(annotations, key=lambda x: getattr(x, 'index', 0), reverse=True)
 
         for ann in sorted_annotations:
             try:
-                filename = ann.filename
-                insert_pos = ann.index
+                filename = getattr(ann, 'filename', '')
+                insert_pos = getattr(ann, 'index', 0)
 
-                # Проверка корректности позиции
                 if insert_pos > len(full_text):
                     logging.warning(f"Позиция аннотации {insert_pos} превышает длину текста")
                     continue
@@ -215,14 +220,10 @@ def generate_lesson_plan_interface(
                         object_key=file_references[filename]
                     )
                     if url:
-                        # Форматируем ссылку (без пробела в начале)
                         link_text = f"[📚 {filename}]({url})"
                         full_text = f"{full_text[:insert_pos]}{link_text}{full_text[insert_pos:]}"
-                else:
-                    logging.warning(f"Файл {filename} не найден в S3")
             except Exception as e:
                 logging.error(f"Ошибка обработки аннотации: {str(e)}")
-                continue
 
     return full_text
 
