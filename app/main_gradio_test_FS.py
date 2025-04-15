@@ -12,6 +12,8 @@ from botocore.exceptions import ClientError
 import random
 import logging
 
+from openai.types.responses import ResponseOutputMessage
+
 from app.quotes import quotes
 from app.drawings import drawings
 import app.prompt
@@ -157,12 +159,27 @@ def generate_lesson_plan_interface(
     except AttributeError:
         full_text = "Не удалось получить текст ответа"
 
+#### АННОТАЦИИ БЕЗ REASONING
     # 2. Получаем аннотации если есть
+#    try:
+#        annotations = response.output[1].content[0].annotations
+#    except (AttributeError, IndexError):
+#        annotations = []
+#        logging.warning("Не найдены аннотации в ответе")
+#
+#### АННОТАЦИИ С REASONING
     try:
-        annotations = response.output[1].content[0].annotations
-    except (AttributeError, IndexError):
+        # Ищем сообщение ассистента с аннотациями в response.output
         annotations = []
-        logging.warning("Не найдены аннотации в ответе")
+        for item in response.output:
+            if isinstance(item, ResponseOutputMessage) and item.role == "assistant":
+                for content_item in item.content:
+                    if hasattr(content_item, 'annotations'):
+                        annotations.extend(content_item.annotations)
+                break  # Прерываем после первого найденного сообщения
+    except (AttributeError, IndexError, TypeError) as e:
+        annotations = []
+        logging.warning(f"Ошибка извлечения аннотаций: {str(e)}")
 
     # 3. Если есть аннотации - обрабатываем их
     if annotations:
@@ -187,9 +204,24 @@ def generate_lesson_plan_interface(
         except ClientError as e:
             logging.error(f"Ошибка доступа к S3: {str(e)}")
             file_references = {}
-
-        # Вставляем ссылки в текст (обратный порядок для сохранения позиций)
-        for ann in reversed(annotations):
+# БЕЗ REASONING
+#         # Вставляем ссылки в текст (обратный порядок для сохранения позиций)
+#         for ann in reversed(annotations):
+#             filename = ann.filename
+#             insert_pos = ann.index
+#
+#             if filename in file_references:
+#                 url = generate_presigned_url(
+#                     bucket_name=bucket_name,
+#                     object_key=file_references[filename]
+#                 )
+#                 if url:
+#                     link_text = f" [📚 {filename}]({url})"
+#                     full_text = f"{full_text[:insert_pos]}{link_text}{full_text[insert_pos:]}"
+#             else:
+#                 logging.warning(f"Файл {filename} не найден в S3")
+#
+        for ann in reversed(sorted(annotations, key=lambda x: x.index)):
             filename = ann.filename
             insert_pos = ann.index
 
@@ -201,22 +233,18 @@ def generate_lesson_plan_interface(
                 if url:
                     link_text = f" [📚 {filename}]({url})"
                     full_text = f"{full_text[:insert_pos]}{link_text}{full_text[insert_pos:]}"
-            else:
-                logging.warning(f"Файл {filename} не найден в S3")
 
-
-
-    # АННОТАЦИИ В ЛОГ
-    if annotations:
-        try:
-            content_block = response.output[1].content[0]
-            logging.info(f"=== ПОЛНЫЙ КОНТЕНТ БЛОКА ===")
-            logging.info(f"Тип: {content_block.type}")
-            logging.info(f"Текст: {content_block.text[:200]}...")  # Первые 200 символов текста
-            logging.info(f"Аннотации: {content_block.annotations}")
-            logging.info(f"Сырые данные: {vars(content_block)}")  # Вся техническая информация
-        except (IndexError, AttributeError) as e:
-            logging.warning(f"Не удалось получить аннотации: {str(e)}")
+#     # АННОТАЦИИ В ЛОГ
+#     if annotations:
+#         try:
+#             content_block = response.output[1].content[0]
+#             logging.info(f"=== ПОЛНЫЙ КОНТЕНТ БЛОКА ===")
+#             logging.info(f"Тип: {content_block.type}")
+#             logging.info(f"Текст: {content_block.text[:200]}...")  # Первые 200 символов текста
+#             logging.info(f"Аннотации: {content_block.annotations}")
+#             logging.info(f"Сырые данные: {vars(content_block)}")  # Вся техническая информация
+#         except (IndexError, AttributeError) as e:
+#             logging.warning(f"Не удалось получить аннотации: {str(e)}")
 
     return full_text
 ####### СТРИМИНГ
@@ -288,7 +316,7 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
                 gr.Markdown("### 🧒 Ребёнок", elem_classes=["block-title"])
                 нарушение = gr.Textbox(label="Основное нарушение*", placeholder="Пример: Дислалия (свистящие), ОНР II уровня")
                 возраст = gr.Textbox(label="Возраст ребенка*", placeholder="Пример: 5 лет, 6-7 лет")
-                особые_условия = gr.Textbox(label="Индивидуальные особенности", placeholder="Пример: гиперактивность, любит машинки")
+                особые_условия = gr.Textbox(label="Индивидуальные особенности", placeholder="Пример: Быстро устаёт, любит сказки")
 
 
             # Блок 2: Занятие (заголовок + поля)
@@ -317,11 +345,6 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
                 # Блок продвинутых настроек, изначально скрыт
                 with gr.Column(visible=False) as advanced_block:
                     gr.Markdown("#### ⚙️ Продвинутые настройки", elem_classes=["block-subtitle"])
-
-                    тема = gr.Textbox(label="Тема занятия", placeholder="Пример: Животные, Весна")
-                    особые_условия = gr.Textbox(label="Индивидуальные особенности",
-                                                placeholder="Пример: Быстро устаёт, любит сказки")
-
                     gr.Markdown("**💡 Уровни задач (таксономия):**")
                     уровень_повторение = gr.Checkbox(label="Повторение")
                     уровень_применение = gr.Checkbox(label="Применение")
