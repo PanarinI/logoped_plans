@@ -136,7 +136,7 @@ def generate_lesson_plan_interface(
 #        tool_choice = {"type": "web_search_preview"}
 
     response = client.responses.create(
-        instructions=app.prompt.INSTRUCTIONS_4,
+        instructions=app.prompt.INSTRUCTIONS_1,
         input=prompt,
         model="o3-mini", # gpt-4o-mini   o3-mini
         tools=tools if tools else None,
