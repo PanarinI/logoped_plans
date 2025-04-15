@@ -356,7 +356,8 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
                     file_search = gr.Checkbox(
                         label="📚 Поиск упражнений в логопедических базах",
                         info="Упражнения подбираются из проверенных источников со ссылками (FS)",
-                        interactive=True
+                        interactive=True,
+                        value=True
                     )
 
             #web_sources = gr.Textbox(
