@@ -136,7 +136,7 @@ def generate_lesson_plan_interface(
 #        tool_choice = {"type": "web_search_preview"}
 
     response = client.responses.create(
-        instructions=app.prompt.INSTRUCTIONS_1,
+        instructions=app.prompt.INSTRUCTIONS_4,
         input=prompt,
         model="o3-mini", # gpt-4o-mini   o3-mini
         tools=tools if tools else None,
@@ -356,7 +356,8 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
                     file_search = gr.Checkbox(
                         label="📚 Поиск упражнений в логопедических базах",
                         info="Упражнения подбираются из проверенных источников со ссылками (FS)",
-                        interactive=True
+                        interactive=True,
+                        value=True
                     )
 
             #web_sources = gr.Textbox(
@@ -390,6 +391,32 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
                     label="⬇️ Скачать .docx",
                     visible=False
                 )
+
+            with gr.Accordion("💬 Помогите нам стать лучше", open=False):
+                gr.Markdown(
+                    """
+                    Спасибо, что попробовали! Как вам?
+                    Бесконечно ценны ваши критиические наблюдения о том, каким получился конспект.
+                    Мы хотим сделать ассистента действительно полезным для вас.
+                    """
+                )
+
+                feedback_text = gr.Textbox(label="Ваше наблюдение или комментарий", lines=4,
+                                           placeholder="Например: 'Для 3 лет лексика подбирается неправильно — какая там 'машина', максимум - 'би-би'")
+
+                rating = gr.Radio(choices=["1", "2", "3", "4", "5"], label="Как вам?",
+                                  info="1 — совсем не то, 5 — полезно!", visible=False)  # Можно включить позже
+
+                send_feedback = gr.Button("Отправить")
+
+                gr.Markdown(
+                    """
+                    🙌 А вдруг вы хотите поучаствовать в тестировании глубже? 
+                    👉 [Присоединяйтесь к Telegram-группе](https://t.me/yourgroup)
+                    """
+                )
+
+                send_feedback.click(fn=save_feedback_fn, inputs=[feedback_text, rating], outputs=[])
 
     # Ввод параметров
     all_inputs = [
