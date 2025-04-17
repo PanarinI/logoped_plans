@@ -354,6 +354,7 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
                 advanced_btn = gr.Button(value="➕ Продвинутые настройки (пока не работает)", size="sm")
                 # Блок продвинутых настроек, изначально скрыт
                 with gr.Column(visible=False) as advanced_block:
+                    gr.Markdown(elem_classes=["block-subtitle"])
                     gr.Markdown("**💡 Уровни задач (таксономия):**")
                     уровень_повторение = gr.Checkbox(label="Повторение")
                     уровень_применение = gr.Checkbox(label="Применение")
@@ -421,7 +422,7 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
                 gr.Markdown(
                     """
                     🙌 Если вас заинтересовал проект, мы приглашаем
-                    👉 [присоединиться к Telegram-группе](https://t.me/yourgroup)
+                    👉 [присоединиться к Telegram-группе](https://t.me/+ygYoYjeD1msyMWZi)
                     """
                 )
 
