@@ -17,6 +17,9 @@ from openai.types.responses import ResponseOutputMessage
 from app.quotes import quotes
 from app.drawings import drawings
 import app.prompt
+import pandas as pd ## сохраняем отзывы
+
+
 
 # Настройка логирования
 logging.basicConfig(
@@ -273,7 +276,16 @@ def generate_lesson_plan_interface(
 #        if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
 #            yield chunk.choices[0].delta.content
 
+def save_feedback_fn(comment, rating):
+    df = pd.DataFrame([{
+        "timestamp": datetime.now().isoformat(),
+        "comment": comment,
+        "rating": rating
+    }])
+    df.to_csv("feedback_log.csv", mode='a', header=False, index=False)
 
+
+########## ИНТЕРФЕЙС
 # Случайный рисунок в блокноте
 drawing = random.choice(drawings)
 # Текст с подсказкой и рисунком в блокноте
@@ -284,9 +296,7 @@ hint_text = f"""Здесь появится план занятия — запо
 </pre>
 """
 
-########## ИНТЕРФЕЙС
 #ТЕМА И СТИЛИ
-
 ### css привязывать именно так
 #theme='earneleh/paris'
 theme = gr.themes.Base(
@@ -411,8 +421,8 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
 
                 gr.Markdown(
                     """
-                    🙌 А вдруг вы хотите поучаствовать в тестировании глубже? 
-                    👉 [Присоединяйтесь к Telegram-группе](https://t.me/yourgroup)
+                    🙌 Если вас заинтересовал проект, мы приглашаем
+                    👉 [присоединиться к Telegram-группе](https://t.me/yourgroup)
                     """
                 )
 
