@@ -402,25 +402,27 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
                     visible=False
                 )
 
-            with gr.Accordion("💬 Помогите нам стать лучше", open=False, elem_classes=["accordion-button"]):
-                gr.Markdown("""
-                    _Спасибо, что попробовали! Как вам?_<br>
-                    _Ваши наблюдения и замечания - это главное, что сделает ассистента умнее и удобнее_
-                """)
+            # Кнопка "Помогите нам стать лучше"
+            feedback_btn = gr.Button("💬 Помогите нам стать лучше", elem_classes=["feedback-button"])
 
-                feedback_text = gr.Textbox(label="Ваше наблюдение или комментарий", lines=4)
-                rating = gr.Radio(choices=["1", "2", "3", "4", "5"], label="Оценка")
-                # Добавляем скрытое уведомление
+            # Скрытый блок с обратной связью
+            with gr.Column(visible=False) as feedback_block:
+                gr.Markdown("_Спасибо, что попробовали! Как вам?_\nВаши наблюдения и замечания помогают нам расти.")
+
+                feedback_text = gr.Textbox(
+                    label="Ваше наблюдение или комментарий",
+                    placeholder="Напишите, что получилось хорошо, а что можно улучшить...",
+                    lines=4
+                )
+
+                rating = gr.Radio(
+                    choices=["1", "2", "3", "4", "5"],
+                    label="Оценка"
+                )
+
+                send_feedback = gr.Button("📩 Отправить отзыв")
+
                 feedback_confirmation = gr.Markdown(visible=False)
-
-                def send_feedback_action(comment, rating):
-                    save_feedback(comment, rating)  # Сохраняем как раньше
-                    return gr.update(
-                        value="✅ Спасибо! Ваш комментарий передан, и возможно уже сегодня ассистент станет полезнее:)",
-                        visible=True
-                    )
-
-                send_feedback = gr.Button("Отправить")
 
                 gr.Markdown(
                     """
@@ -532,7 +534,21 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
 #        inputs=[],
 #        outputs=[]
 #    )
-    # ОБРАТНАЯ СВЯЗЬ
+    # Логика: показать форму по нажатию на кнопку
+    feedback_btn.click(
+        fn=lambda: gr.update(visible=True),
+        inputs=[],
+        outputs=feedback_block
+    )
+
+    # Логика отправки обратной связи
+    def send_feedback_action(comment, rating):
+        save_feedback(comment, rating)  # <-- твоя функция сохранения
+        return gr.update(
+            value="✅ Спасибо! Ваш комментарий передан, и возможно уже сегодня ассистент станет полезнее :)",
+            visible=True
+        )
+
     send_feedback.click(
         fn=send_feedback_action,
         inputs=[feedback_text, rating],
