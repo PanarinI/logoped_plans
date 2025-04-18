@@ -294,7 +294,6 @@ def save_feedback(comment, rate):
 drawing = random.choice(drawings)
 # Текст с подсказкой и рисунком в блокноте
 hint_text = f"""Здесь появится план занятия — заполните вводные и нажмите кнопку **Создать конспект**<br>
-[присоединиться к Telegram-группе](https://t.me/+ygYoYjeD1msyMWZi)
 <pre>
 {drawing}
 </pre>
@@ -442,7 +441,7 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
 
             # <-- Блок благодарности — ВНЕ feedback_block, но СРАЗУ ПОСЛЕ
             with gr.Column(visible=False) as feedback_confirmation:
-                gr.Markdown("✅ Спасибо! Ваш комментарий передан, и, возможно, уже сегодня ассистент станет полезнее :)")
+                gr.Markdown("✅ Спасибо! Ваш комментарий передан и, возможно, уже сегодня ассистент станет полезнее :)")
 
             # Остальное
             gr.Markdown(
