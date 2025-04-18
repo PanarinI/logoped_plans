@@ -315,6 +315,8 @@ css_path = os.path.join(os.path.dirname(__file__), "styles.css")
 
 with gr.Blocks(theme=theme, css_paths=css_path) as demo:
     advanced_settings_visible = gr.State(value=False)  # Импортируем gr.State для хранения состояния
+    feedback_visible = gr.State(False)  # Хранит, открыт ли блок отзыва
+
     gr.Markdown("# Логопедический конспект", elem_classes=["main-title"])
     quote_box = gr.Markdown(random.choice(quotes), elem_classes=["quote-block"])
 
@@ -409,6 +411,13 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
             with gr.Column(visible=False) as feedback_block:
                 gr.Markdown("_Спасибо, что попробовали! Как вам?_\nВаши наблюдения и замечания помогают нам расти.")
 
+
+                def toggle_feedback_block(current_visible):
+                    return (
+                        gr.update(visible=not current_visible),  # показать/скрыть блок
+                        not current_visible,  # обновить состояние
+                        gr.update(visible=False)  # скрыть благодарность при открытии/закрытии
+                    )
                 feedback_text = gr.Textbox(
                     label="Ваше наблюдение или комментарий",
                     placeholder="Напишите, что получилось хорошо, а что можно улучшить...",
@@ -536,24 +545,29 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
 #    )
     # Логика: показать форму по нажатию на кнопку
     feedback_btn.click(
-        fn=lambda: gr.update(visible=True),
-        inputs=[],
-        outputs=feedback_block
+        fn=toggle_feedback_block,
+        inputs=[feedback_visible],
+        outputs=[feedback_block, feedback_visible, feedback_confirmation]
     )
 
     # Логика отправки обратной связи
-    def send_feedback_action(comment, rating):
-        save_feedback(comment, rating)  # <-- твоя функция сохранения
-        return gr.update(
-            value="✅ Спасибо! Ваш комментарий передан, и возможно уже сегодня ассистент станет полезнее :)",
-            visible=True
+    def send_feedback_fn(comment, rate):
+        # здесь можно записывать отзыв в БД или лог
+        return (
+            gr.update(visible=False),  # свернуть форму
+            False,  # сбросить состояние
+            gr.update(
+                value="✅ Спасибо! Ваш комментарий передан, и, возможно, уже сегодня ассистент станет полезнее :)",
+                visible=True
+            )
         )
 
     send_feedback.click(
-        fn=send_feedback_action,
+        fn=send_feedback_fn,
         inputs=[feedback_text, rating],
-        outputs=feedback_confirmation
+        outputs=[feedback_block, feedback_visible, feedback_confirmation]
     )
+
     # ПРОДВИНУТЫЕ НАСТРОЙКИ
     advanced_btn.click(
         fn=toggle_advanced_settings,
