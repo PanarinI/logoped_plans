@@ -431,6 +431,10 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
 
                 send_feedback = gr.Button("📩 Отправить отзыв")
 
+                feedback_confirmation = gr.Markdown(
+                    visible=False,
+                    elem_classes=["feedback-confirmation"]
+                )
 
                 gr.Markdown(
                     """
@@ -439,10 +443,6 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
                     """
                 )
 
-        feedback_confirmation = gr.Markdown(
-            visible=False,
-            elem_classes=["feedback-confirmation"]
-        )
 
 
     # Ввод параметров
