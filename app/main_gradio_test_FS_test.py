@@ -294,6 +294,7 @@ def save_feedback(comment, rate):
 drawing = random.choice(drawings)
 # Текст с подсказкой и рисунком в блокноте
 hint_text = f"""Здесь появится план занятия — заполните вводные и нажмите кнопку **Создать конспект**<br>
+Создание может занять до 1 минуты
 <pre>
 {drawing}
 </pre>
