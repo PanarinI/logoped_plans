@@ -431,10 +431,6 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
 
                 send_feedback = gr.Button("📩 Отправить отзыв")
 
-                feedback_confirmation = gr.Markdown(
-                    visible=False,
-                    elem_classes=["feedback-confirmation"]
-                )
 
                 gr.Markdown(
                     """
@@ -442,6 +438,11 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
                     👉 [присоединиться к Telegram-группе](https://t.me/+ygYoYjeD1msyMWZi)
                     """
                 )
+
+        feedback_confirmation = gr.Markdown(
+            visible=False,
+            elem_classes=["feedback-confirmation"]
+        )
 
 
     # Ввод параметров
@@ -555,7 +556,7 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
 
     # Логика отправки обратной связи
     def send_feedback_fn(comment, rate):
-        # здесь можно записывать отзыв в БД или лог
+        save_feedback(comment, rate)  # Сохраняем отзыв
         return (
             gr.update(visible=False),  # свернуть форму
             False,  # сбросить состояние
