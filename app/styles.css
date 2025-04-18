@@ -53,12 +53,12 @@
 /*#f5f5f5*/
 
 /* Стилизуем заголовок аккордеона (самую "кнопку") */
-.accordion > div:first-child {
+.feedback-button {
     font-weight: bold;
     text-align: center;
-    background-color: #f7f7f7;
-    padding: 10px;
-    border-radius: 8px;
-    cursor: pointer;
+    background-color: #f1f1f1;
+    padding: 12px 18px;
+    border-radius: 10px;
+    margin-top: 12px;
 }
 
