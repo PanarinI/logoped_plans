@@ -148,7 +148,7 @@ def generate_lesson_plan_interface(
         max_output_tokens=8192,
         #temperature=float(os.getenv("TEMPERATURE", 1)),
         reasoning= {"effort":"medium"},
-        stream=False
+        stream=True
     )
 
 
