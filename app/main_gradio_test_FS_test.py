@@ -391,6 +391,11 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
             # Кнопка создания конспекта
             btn = gr.Button("Создать конспект", variant="primary")
 
+            gr.Markdown(
+                "<p style='font-size: 12px; font-style: italic;'>В создании конспектов используются материалы, загруженные из открытых источников. По просьбе правообладателя мы немедленно удалим материал.</p>",
+                elem_classes=["info-text"]
+            )
+
         # Правая колонка — результат (output)
         with gr.Column(elem_classes=["right-col"], scale=2):
             # Общий блок-панель для правой колонки
