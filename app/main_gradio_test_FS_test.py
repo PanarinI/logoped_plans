@@ -11,7 +11,7 @@ import boto3
 from botocore.exceptions import ClientError
 import random
 import logging
-
+import requests # для отправки отзывов на url google sheets
 from openai.types.responses import ResponseOutputMessage
 
 from app.quotes import quotes
@@ -276,14 +276,18 @@ def generate_lesson_plan_interface(
 #        if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
 #            yield chunk.choices[0].delta.content
 
-def save_feedback(comment, rating):
-    df = pd.DataFrame([{
-        "timestamp": datetime.now().isoformat(),
-        "comment": comment,
-        "rating": rating
-    }])
-    df.to_csv("feedback_log.csv", mode='a', header=False, index=False)
+## Сохраняем отзыв через POST в google-таблицу
+GOOGLE_SHEET_URL = os.getenv("FEEDBACK_GS_URL")
 
+def save_feedback(comment, rate):
+    payload = {
+        "comment": comment,
+        "rate": rate
+    }
+    try:
+        requests.post(GOOGLE_SHEET_URL, json=payload, timeout=3)
+    except Exception as e:
+        print(f"Ошибка при отправке отзыва: {e}")
 
 ########## ИНТЕРФЕЙС
 # Случайный рисунок в блокноте
