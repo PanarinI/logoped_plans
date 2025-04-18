@@ -410,10 +410,8 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
 
                 feedback_text = gr.Textbox(label="Ваше наблюдение или комментарий", lines=4)
                 rating = gr.Radio(choices=["1", "2", "3", "4", "5"], label="Оценка")
-
                 # Добавляем скрытое уведомление
                 feedback_confirmation = gr.Markdown(visible=False)
-
 
                 def send_feedback_action(comment, rating):
                     save_feedback(comment, rating)  # Сохраняем как раньше
@@ -422,6 +420,7 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
                         visible=True
                     )
 
+                send_feedback = gr.Button("Отправить")
 
                 gr.Markdown(
                     """
@@ -534,7 +533,7 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
 #        outputs=[]
 #    )
     # ОБРАТНАЯ СВЯЗЬ
-    save_feedback.click(
+    send_feedback.click(
         fn=send_feedback_action,
         inputs=[feedback_text, rating],
         outputs=feedback_confirmation
