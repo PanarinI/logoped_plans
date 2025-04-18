@@ -62,3 +62,11 @@
     margin-top: 12px;
 }
 
+.feedback-confirmation {
+    padding: 1em;
+    background-color: #e6ffe6;
+    border: 1px solid #66cc66;
+    border-radius: 0.5em;
+    color: #336633;
+    font-weight: bold;
+}
