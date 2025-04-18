@@ -276,7 +276,7 @@ def generate_lesson_plan_interface(
 #        if chunk.choices and chunk.choices[0].delta and chunk.choices[0].delta.content:
 #            yield chunk.choices[0].delta.content
 
-def save_feedback_fn(comment, rating):
+def save_feedback(comment, rating):
     df = pd.DataFrame([{
         "timestamp": datetime.now().isoformat(),
         "comment": comment,
@@ -416,17 +416,12 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
 
 
                 def send_feedback_action(comment, rating):
-                    save_feedback_fn(comment, rating)  # Сохраняем как раньше
+                    save_feedback(comment, rating)  # Сохраняем как раньше
                     return gr.update(
                         value="✅ Спасибо! Ваш комментарий передан, и возможно уже сегодня ассистент станет полезнее:)",
                         visible=True
                     )
 
-                send_feedback.click(
-                    fn=send_feedback_action,
-                    inputs=[feedback_text, rating],
-                    outputs=feedback_confirmation
-                )
 
                 gr.Markdown(
                     """
@@ -528,6 +523,7 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
 
 
     # Привязываем обработчики
+    # ГЕНЕРАЦИЯ
     btn.click(
         fn=on_submit_with_spinner,
         inputs=all_inputs,
@@ -537,7 +533,13 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
 #        inputs=[],
 #        outputs=[]
 #    )
-
+    # ОБРАТНАЯ СВЯЗЬ
+    save_feedback.click(
+        fn=send_feedback_action,
+        inputs=[feedback_text, rating],
+        outputs=feedback_confirmation
+    )
+    # ПРОДВИНУТЫЕ НАСТРОЙКИ
     advanced_btn.click(
         fn=toggle_advanced_settings,
         inputs=[advanced_settings_visible],
