@@ -1,6 +1,10 @@
 import requests
+import os
+from dotenv import load_dotenv
 
-url = "https://script.google.com/macros/s/AKfycbxEEWarPE7e8gcR4uVA83ciWdrFfNfro9VZkyW3x3Yw_e2yJfKEGg0GA6YeuO2FPAN2/exec"  # замени на свой
+load_dotenv()
+
+url = os.getenv("FEEDBACK_GS_URL") # замени на свой
 data = {
     "comment": "тестовый отзыв",
     "rate": 5
