@@ -409,7 +409,7 @@ with gr.Blocks(theme=theme, css_paths=css_path) as demo:
 
             # Скрытый блок с обратной связью
             with gr.Column(visible=False) as feedback_block:
-                gr.Markdown("_Спасибо, что попробовали! Как вам?_\nВаши наблюдения и замечания помогают нам расти.")
+                gr.Markdown("_Спасибо, что попробовали! Как вам?_\n_Ваши наблюдения и замечания помогают нам расти._")
 
 
                 def toggle_feedback_block(current_visible):
